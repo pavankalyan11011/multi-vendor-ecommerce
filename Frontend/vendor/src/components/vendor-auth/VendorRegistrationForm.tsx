@@ -52,11 +52,11 @@ export function VendorRegistrationForm() {
       }
       setSuccess(
         message ||
-          "Seller application submitted. Your account is pending approval."
+          "Seller account created. Continue with your business profile."
       );
-      // Pending vendors may authenticate for status screens only.
+      // Pending vendors complete business onboarding next.
       await login({ email: payload.email, password: payload.password });
-      router.replace("/pending-approval");
+      router.replace("/onboarding");
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.code === "DUPLICATE_EMAIL") {

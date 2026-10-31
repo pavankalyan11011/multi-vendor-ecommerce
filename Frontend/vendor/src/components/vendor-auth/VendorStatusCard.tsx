@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { describeVendorStatus } from "@/features/vendor-auth/lib/vendor-routing";
+import {
+  describeApplicationStatus,
+  describeVendorStatus,
+} from "@/features/vendor-auth/lib/vendor-routing";
+import { getVendorApplication } from "@/features/vendor-onboarding/services/vendor-application.service";
+import type { VendorApplication } from "@/features/vendor-onboarding/types";
+import { getErrorMessage } from "@/lib/api/errors";
 
 export function VendorStatusCard({
   mode,
@@ -18,8 +24,26 @@ export function VendorStatusCard({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [application, setApplication] = useState<VendorApplication | null>(null);
+  const [loadError, setLoadError] = useState("");
 
-  const copy =
+  useEffect(() => {
+    if (status !== "authenticated" || user?.role !== "VENDOR") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getVendorApplication();
+        if (!cancelled) setApplication(res.data);
+      } catch (error) {
+        if (!cancelled) setLoadError(getErrorMessage(error));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, user?.role]);
+
+  const accountCopy =
     user && user.role === "VENDOR"
       ? describeVendorStatus(user.status)
       : {
@@ -33,10 +57,22 @@ export function VendorStatusCard({
               : "This area is reserved for approved vendor accounts.",
         };
 
+  const appCopy = application
+    ? describeApplicationStatus(application.applicationStatus)
+    : null;
+
   async function onRefresh() {
     setBusy(true);
     setNote("");
     const next = await refreshSession();
+    if (next?.role === "VENDOR") {
+      try {
+        const res = await getVendorApplication();
+        setApplication(res.data);
+      } catch (error) {
+        setLoadError(getErrorMessage(error));
+      }
+    }
     setBusy(false);
     if (!next) {
       setNote("Could not refresh session. Please sign in again.");
@@ -46,7 +82,7 @@ export function VendorStatusCard({
       router.replace("/dashboard");
       return;
     }
-    setNote(`Status refreshed: ${next.status}`);
+    setNote(`Account status refreshed: ${next.status}`);
   }
 
   async function onLogout() {
@@ -56,12 +92,17 @@ export function VendorStatusCard({
     router.replace("/login");
   }
 
+  const canEditProfile =
+    application &&
+    (application.applicationStatus === "DRAFT" ||
+      application.applicationStatus === "REJECTED");
+
   return (
     <AuthCard
-      title={copy.title}
+      title={appCopy?.title || accountCopy.title}
       description={
         mode === "application"
-          ? "Seller application status from the authentication API."
+          ? "Account status and business application status are tracked separately."
           : undefined
       }
       footer={
@@ -73,26 +114,46 @@ export function VendorStatusCard({
         </Link>
       }
     >
-      <Alert className="mb-4">{copy.body}</Alert>
+      <Alert className="mb-4">{appCopy?.body || accountCopy.body}</Alert>
+      {application?.rejectionReason ? (
+        <Alert variant="destructive" className="mb-4">
+          {application.rejectionReason}
+        </Alert>
+      ) : null}
+      {loadError ? (
+        <Alert variant="destructive" className="mb-4">
+          {loadError}
+        </Alert>
+      ) : null}
 
       {user ? (
-        <dl className="mb-4 grid gap-2 rounded-lg border border-emporia-border bg-neutral-50 p-3 text-sm">
+        <dl className="mb-4 grid gap-2 rounded-lg border border-emporia-border bg-emporia-paper/60 p-3 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="text-emporia-muted">Name</dt>
             <dd className="font-medium text-emporia-ink">{user.fullName}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-emporia-muted">Email</dt>
-            <dd className="font-medium text-emporia-ink">{user.email}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-emporia-muted">Role</dt>
-            <dd className="font-medium text-emporia-ink">{user.role}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-emporia-muted">Status</dt>
+            <dt className="text-emporia-muted">Account status</dt>
             <dd className="font-medium text-emporia-ink">{user.status}</dd>
           </div>
+          {application ? (
+            <>
+              <div className="flex justify-between gap-4">
+                <dt className="text-emporia-muted">Application</dt>
+                <dd className="font-medium text-emporia-ink">
+                  {application.applicationStatus}
+                </dd>
+              </div>
+              {application.shopName ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-emporia-muted">Shop</dt>
+                  <dd className="font-medium text-emporia-ink">
+                    {application.shopName}
+                  </dd>
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </dl>
       ) : null}
 
@@ -105,6 +166,16 @@ export function VendorStatusCard({
       <div className="flex flex-col gap-2 sm:flex-row">
         {status === "authenticated" ? (
           <>
+            {canEditProfile ? (
+              <Link
+                href="/onboarding"
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-md bg-emporia-ink px-4 text-sm font-medium text-emporia-lime hover:bg-emporia-ink-soft"
+              >
+                {application?.applicationStatus === "REJECTED"
+                  ? "Edit & resubmit"
+                  : "Complete profile"}
+              </Link>
+            ) : null}
             <Button
               type="button"
               variant="secondary"
@@ -127,16 +198,12 @@ export function VendorStatusCard({
         ) : (
           <Link
             href="/login"
-            className="inline-flex h-11 w-full items-center justify-center rounded-md bg-emporia-ink px-4 text-sm font-medium text-white hover:bg-emporia-ink-soft"
+            className="inline-flex h-11 w-full items-center justify-center rounded-md bg-emporia-ink px-4 text-sm font-medium text-emporia-lime hover:bg-emporia-ink-soft"
           >
             Go to vendor login
           </Link>
         )}
       </div>
-      <p className="mt-4 text-xs text-emporia-muted">
-        Backend statuses in Phase 2.1: PENDING, ACTIVE, SUSPENDED. There is no
-        separate REJECTED status yet.
-      </p>
     </AuthCard>
   );
 }

@@ -9,4 +9,15 @@ function validateBody(schema) {
   };
 }
 
-module.exports = { validateBody };
+function validateQuery(schema) {
+  return (req, _res, next) => {
+    const parsed = schema.safeParse(req.query);
+    if (!parsed.success) {
+      return next(parsed.error);
+    }
+    req.query = parsed.data;
+    return next();
+  };
+}
+
+module.exports = { validateBody, validateQuery };

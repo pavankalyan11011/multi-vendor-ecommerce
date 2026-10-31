@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminGuard } from "@/components/admin-auth/AdminGuard";
@@ -51,7 +52,7 @@ function AdminDashboardEntry() {
   return (
     <AuthCard
       title="Admin dashboard"
-      description="Authenticated entry only. Moderation tools arrive in later phases."
+      description="Operations entry for Emporia Console — vendors and catalog configuration."
     >
       {error ? (
         <Alert variant="destructive" className="mb-4">
@@ -78,15 +79,43 @@ function AdminDashboardEntry() {
         </div>
       </dl>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        disabled={busy}
-        onClick={onLogout}
-      >
-        {busy ? "Signing out..." : "Sign out"}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link
+            href="/vendors"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-emporia-ink px-4 text-sm font-medium text-emporia-lime hover:bg-emporia-ink-soft"
+          >
+            Vendor applications
+          </Link>
+          <Link
+            href="/categories"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:bg-emporia-mist/40"
+          >
+            Categories
+          </Link>
+          <Link
+            href="/attributes"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:bg-emporia-mist/40"
+          >
+            Attributes
+          </Link>
+          <Link
+            href="/attribute-sets"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:bg-emporia-mist/40"
+          >
+            Attribute sets
+          </Link>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={busy}
+          onClick={onLogout}
+        >
+          {busy ? "Signing out..." : "Sign out"}
+        </Button>
+      </div>
     </AuthCard>
   );
 }

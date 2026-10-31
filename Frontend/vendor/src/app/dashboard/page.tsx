@@ -31,7 +31,7 @@ function VendorDashboardEntry() {
       } catch (err) {
         if (cancelled) return;
         if (err instanceof ApiError && err.code === "VENDOR_NOT_APPROVED") {
-          router.replace("/pending-approval");
+          router.replace("/application-status");
           return;
         }
         if (err instanceof ApiError && err.status === 403) {
@@ -56,7 +56,7 @@ function VendorDashboardEntry() {
   return (
     <AuthCard
       title="Vendor dashboard"
-      description="Entry point only - catalog, inventory, and fulfillment are later phases."
+      description="Manage your shop application and product catalog."
     >
       {error ? (
         <Alert variant="destructive" className="mb-4">
@@ -83,17 +83,31 @@ function VendorDashboardEntry() {
         </div>
       </dl>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Link
-          href="/application-status"
-          className="inline-flex h-11 flex-1 items-center justify-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:border-emporia-teal hover:bg-emporia-paper"
-        >
-          View status
-        </Link>
+      <div className="flex flex-col gap-2">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link
+            href="/products"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-emporia-ink px-4 text-sm font-medium text-emporia-lime hover:bg-emporia-ink-soft"
+          >
+            Products
+          </Link>
+          <Link
+            href="/products/new"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:border-emporia-teal hover:bg-emporia-paper"
+          >
+            Add product
+          </Link>
+          <Link
+            href="/application-status"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:border-emporia-teal hover:bg-emporia-paper sm:col-span-2"
+          >
+            Application status
+          </Link>
+        </div>
         <Button
           type="button"
           variant="outline"
-          className="flex-1"
+          className="w-full"
           disabled={busy}
           onClick={onLogout}
         >

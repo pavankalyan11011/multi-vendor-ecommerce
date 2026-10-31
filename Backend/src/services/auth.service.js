@@ -12,6 +12,9 @@ const {
   accessTokenExpiresInSeconds,
 } = require('../utils/tokens');
 const { getEnv } = require('../config/env');
+const {
+  ensureVendorApplication,
+} = require('./vendorApplication.service');
 
 function toPublicUser(user) {
   const obj = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
@@ -65,6 +68,9 @@ async function registerVendor({ fullName, email, password }) {
     status: STATUSES.PENDING,
     emailVerified: false,
   });
+
+  // Separate application record (DRAFT) — business onboarding is Phase 2.
+  await ensureVendorApplication(user._id);
 
   return toPublicUser(user);
 }

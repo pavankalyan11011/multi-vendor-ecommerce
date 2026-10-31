@@ -24,7 +24,7 @@ export function AuthGate({
     requireActive = false,
     loginHrefBuilder = buildVendorLoginHref,
     deniedHref = "/access-denied",
-    pendingHref = "/pending-approval",
+    pendingHref = "/application-status",
   } = options;
 
   const { status, user, isVendor, isApprovedVendor, logout } = useAuth();

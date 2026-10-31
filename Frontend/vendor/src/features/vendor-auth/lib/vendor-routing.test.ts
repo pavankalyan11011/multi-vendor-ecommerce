@@ -23,7 +23,7 @@ function user(partial: Partial<AuthUser>): AuthUser {
 describe("resolveVendorPostLoginPath", () => {
   it("routes pending / active / suspended correctly", () => {
     expect(resolveVendorPostLoginPath(user({ status: "PENDING" }))).toBe(
-      "/pending-approval"
+      "/application-status"
     );
     expect(resolveVendorPostLoginPath(user({ status: "ACTIVE" }))).toBe(
       "/dashboard"
@@ -42,6 +42,6 @@ describe("resolveVendorPostLoginPath", () => {
 
 describe("describeVendorStatus", () => {
   it("documents pending copy", () => {
-    expect(describeVendorStatus("PENDING").title).toMatch(/review/i);
+    expect(describeVendorStatus("PENDING").title).toMatch(/pending/i);
   });
 });

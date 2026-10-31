@@ -187,7 +187,7 @@ export function getVendorDestination(user: AuthUser): string {
     return "/access-denied";
   }
   if (user.status === "PENDING") {
-    return "/pending-approval";
+    return "/application-status";
   }
   if (user.status === "SUSPENDED") {
     return "/access-denied";

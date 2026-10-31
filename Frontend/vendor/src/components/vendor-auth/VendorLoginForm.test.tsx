@@ -56,7 +56,7 @@ describe("VendorLoginForm", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("sends pending vendors to pending-approval", async () => {
+  it("sends pending vendors to application-status", async () => {
     login.mockResolvedValue({
       id: "2",
       fullName: "Vince",
@@ -76,7 +76,7 @@ describe("VendorLoginForm", () => {
       screen.getByRole("button", { name: /sign in to seller portal/i })
     );
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith("/pending-approval");
+      expect(replace).toHaveBeenCalledWith("/application-status");
     });
   });
 
