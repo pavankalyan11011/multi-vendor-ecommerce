@@ -1,36 +1,34 @@
-const { getEnv } = require('../config/env');
+const { getEnv, isAllowedOrigin } = require('../config/env');
 const { ApiError } = require('../utils/ApiError');
+
+function isTrustedOrigin(value, env) {
+  try {
+    const parsed = new URL(value);
+    return isAllowedOrigin(parsed.origin, env.clientOrigins, env.isProd);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Cookie-based refresh/logout must come from a trusted Origin (or same-site Referer).
- * Combined with SameSite cookies this reduces CSRF risk.
+ * Supports multiple frontend apps via CLIENT_ORIGINS.
  */
 function requireTrustedOrigin(req, _res, next) {
   const env = getEnv();
-  const trusted = new URL(env.clientOrigin);
   const origin = req.get('origin');
   const referer = req.get('referer');
 
   if (origin) {
-    try {
-      const o = new URL(origin);
-      if (o.origin === trusted.origin) {
-        return next();
-      }
-    } catch {
-      // fall through
+    if (isTrustedOrigin(origin, env)) {
+      return next();
     }
     return next(new ApiError(403, 'CSRF_REJECTED', 'Untrusted origin'));
   }
 
   if (referer) {
-    try {
-      const r = new URL(referer);
-      if (r.origin === trusted.origin) {
-        return next();
-      }
-    } catch {
-      // fall through
+    if (isTrustedOrigin(referer, env)) {
+      return next();
     }
     return next(new ApiError(403, 'CSRF_REJECTED', 'Untrusted referer'));
   }

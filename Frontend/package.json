@@ -1,0 +1,17 @@
+{
+  "name": "emporia-frontends",
+  "private": true,
+  "description": "Convenience scripts only. Shop, Seller, and Console are independent Next.js apps with their own package.json, deps, and env.",
+  "scripts": {
+    "dev:customer": "npm --prefix customer run dev",
+    "dev:vendor": "npm --prefix vendor run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "build:customer": "npm --prefix customer run build",
+    "build:vendor": "npm --prefix vendor run build",
+    "build:admin": "npm --prefix admin run build",
+    "test:customer": "npm --prefix customer run test",
+    "test:vendor": "npm --prefix vendor run test",
+    "test:admin": "npm --prefix admin run test",
+    "install:all": "npm --prefix customer install && npm --prefix vendor install && npm --prefix admin install"
+  }
+}

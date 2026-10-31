@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --emporia-ink: #0b1f1c;
+  --emporia-ink-soft: #163532;
+  --emporia-mist: #e4edec;
+  --emporia-paper: #f2f6f5;
+  --emporia-teal: #0f766e;
+  --emporia-teal-bright: #2dd4bf;
+  --emporia-lime: #d9f99d;
+  --emporia-muted: #5b736f;
+  --emporia-border: #c5d4d1;
+  --background: var(--emporia-paper);
+  --foreground: var(--emporia-ink);
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(45, 212, 191, 0.16), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(15, 118, 110, 0.1), transparent 50%),
+    linear-gradient(165deg, #f7faf9 0%, #eef4f3 48%, #e7eeec 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 50;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--emporia-teal);
+  outline-offset: 2px;
+}
+
+@keyframes emporia-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes emporia-ken {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes emporia-soft-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.animate-fade-up {
+  animation: emporia-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-up-delay {
+  animation: emporia-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: emporia-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+
+.animate-ken {
+  animation: emporia-ken 22s ease-out forwards;
+}
+
+.animate-soft-glow {
+  animation: emporia-soft-glow 7s ease-in-out infinite;
+}
