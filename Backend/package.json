@@ -7,7 +7,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test": "jest --runInBand",
-    "test:auth": "jest --runInBand tests/auth.test.js"
+    "test:auth": "jest --runInBand tests/auth.test.js",
+    "seed:admin": "node scripts/seed-admin.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
