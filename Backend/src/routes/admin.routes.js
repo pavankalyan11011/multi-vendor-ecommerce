@@ -26,9 +26,15 @@ const {
   attributeStatusSchema,
   listAttributesQuerySchema,
 } = require('../validators/attribute.schemas');
+const {
+  listAdminProductsQuerySchema,
+  rejectProductSchema,
+  listRevisionsQuerySchema,
+} = require('../validators/product.schemas');
 const vendorApplicationController = require('../controllers/vendorApplication.controller');
 const categoryController = require('../controllers/category.controller');
 const attributeController = require('../controllers/attribute.controller');
+const productModerationController = require('../controllers/productModeration.controller');
 const { handleCategoryImageUpload } = require('../middleware/upload');
 const { asyncHandler } = require('../utils/asyncHandler');
 
@@ -204,6 +210,49 @@ router.patch(
   ...adminGate,
   validateBody(attributeStatusSchema),
   attributeController.setStatus
+);
+
+/* ——— Product moderation (Phase 3C) ——— */
+router.get(
+  '/products',
+  ...adminGate,
+  validateQuery(listAdminProductsQuerySchema),
+  productModerationController.listAdmin
+);
+
+router.get('/products/:id', ...adminGate, productModerationController.getAdmin);
+
+router.post(
+  '/products/:id/approve',
+  ...adminGate,
+  productModerationController.approve
+);
+
+router.post(
+  '/products/:id/reject',
+  ...adminGate,
+  validateBody(rejectProductSchema),
+  productModerationController.reject
+);
+
+router.get(
+  '/product-revisions',
+  ...adminGate,
+  validateQuery(listRevisionsQuerySchema),
+  productModerationController.listRevisions
+);
+
+router.post(
+  '/product-revisions/:id/approve',
+  ...adminGate,
+  productModerationController.approveRevision
+);
+
+router.post(
+  '/product-revisions/:id/reject',
+  ...adminGate,
+  validateBody(rejectProductSchema),
+  productModerationController.rejectRevision
 );
 
 module.exports = router;

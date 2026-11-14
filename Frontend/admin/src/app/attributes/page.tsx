@@ -1,9 +1,8 @@
 "use client";
 
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,9 +73,9 @@ function AttributesList() {
       ) : items.length === 0 ? (
         <Alert>No attributes yet.</Alert>
       ) : (
-        <div className="overflow-x-auto border border-emporia-border bg-white/90">
+        <div className="overflow-x-auto rounded-xl border border-emporia-border/80 bg-white shadow-sm">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-emporia-border bg-emporia-mist/50 text-emporia-muted">
+            <thead className="border-b border-emporia-border bg-[#f8faf9] text-emporia-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Code</th>
@@ -129,10 +128,7 @@ function AttributesList() {
 
 export default function AttributesPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Attributes" wide>
-        <AttributesList />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell><AttributesList />
+    </AdminShell>
   );
 }

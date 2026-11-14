@@ -18,6 +18,7 @@ import {
   type AdminLoginFormValues,
 } from "@/features/admin-auth/schemas/admin-auth.schemas";
 import { resolveAdminPostLoginPath } from "@/features/admin-auth/lib/admin-routing";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 export function AdminLoginForm() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export function AdminLoginForm() {
     setFormError("");
     try {
       const user = await login(values);
-      if (user.role !== "ADMIN" || user.status !== "ACTIVE") {
+      if (!userHasRole(user, "ADMIN") || user.status !== "ACTIVE") {
         setFormError(
           "Administrative access was denied for this account."
         );

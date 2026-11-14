@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { AuthCard } from "@/components/auth/AuthCard";
+import { SellerPageHeader } from "@/components/seller-shell/SellerPageHeader";
+import { StatusBadge } from "@/components/seller-shell/StatusBadge";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,9 @@ import { ApiError, getErrorMessage } from "@/lib/api/errors";
 
 export function BusinessProfileForm() {
   const router = useRouter();
-  const [application, setApplication] = useState<VendorApplication | null>(null);
+  const [application, setApplication] = useState<VendorApplication | null>(
+    null
+  );
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
@@ -53,17 +56,6 @@ export function BusinessProfileForm() {
         const res = await getVendorApplication();
         if (cancelled) return;
         setApplication(res.data);
-        if (
-          res.data.applicationStatus === "SUBMITTED" ||
-          res.data.applicationStatus === "APPROVED"
-        ) {
-          router.replace(
-            res.data.applicationStatus === "APPROVED"
-              ? "/dashboard"
-              : "/application-status"
-          );
-          return;
-        }
         reset({
           shopName: res.data.shopName || "",
           description: res.data.description || "",
@@ -79,7 +71,11 @@ export function BusinessProfileForm() {
     return () => {
       cancelled = true;
     };
-  }, [reset, router]);
+  }, [reset]);
+
+  const readOnly =
+    application?.applicationStatus === "SUBMITTED" ||
+    application?.applicationStatus === "APPROVED";
 
   const onSave = handleSubmit(async (values) => {
     setFormError("");
@@ -111,7 +107,7 @@ export function BusinessProfileForm() {
   });
 
   async function onUpload(fileList: FileList | null) {
-    if (!fileList?.[0]) return;
+    if (!fileList?.[0] || readOnly) return;
     setUploading(true);
     setFormError("");
     try {
@@ -128,18 +124,33 @@ export function BusinessProfileForm() {
   }
 
   if (loading) {
-    return (
-      <AuthCard title="Business profile">
-        <p className="text-sm text-emporia-muted">Loading application...</p>
-      </AuthCard>
-    );
+    return <p className="text-sm text-emporia-muted">Loading application…</p>;
   }
 
   return (
-    <AuthCard
-      title="Business profile"
-      description="Tell Emporia about your shop. Submit for admin review when ready."
-    >
+    <div>
+      <SellerPageHeader
+        title="Business profile"
+        description="Tell Emporia about your shop. Submit for admin review when ready."
+        action={
+          application ? (
+            <StatusBadge
+              tone={
+                application.applicationStatus === "APPROVED"
+                  ? "success"
+                  : application.applicationStatus === "REJECTED"
+                    ? "danger"
+                    : application.applicationStatus === "SUBMITTED"
+                      ? "warning"
+                      : "muted"
+              }
+            >
+              {application.applicationStatus}
+            </StatusBadge>
+          ) : null
+        }
+      />
+
       {application?.rejectionReason ? (
         <Alert variant="destructive" className="mb-4">
           Rejected: {application.rejectionReason}
@@ -156,86 +167,134 @@ export function BusinessProfileForm() {
         </Alert>
       ) : null}
 
-      <form className="space-y-4" noValidate>
-        <div className="space-y-2">
-          <Label htmlFor="shopName">Shop name</Label>
-          <Input id="shopName" {...register("shopName")} />
-          {errors.shopName ? (
-            <p className="text-sm text-emporia-danger">{errors.shopName.message}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <textarea
-            id="description"
-            className="min-h-28 w-full rounded-md border border-emporia-border bg-white px-3 py-2 text-sm text-emporia-ink shadow-sm focus-visible:border-emporia-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emporia-teal/30"
-            {...register("description")}
-          />
-          {errors.description ? (
-            <p className="text-sm text-emporia-danger">
-              {errors.description.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="supportEmail">Support email</Label>
-          <Input id="supportEmail" type="email" {...register("supportEmail")} />
-          {errors.supportEmail ? (
-            <p className="text-sm text-emporia-danger">
-              {errors.supportEmail.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" {...register("phone")} />
-          {errors.phone ? (
-            <p className="text-sm text-emporia-danger">{errors.phone.message}</p>
-          ) : null}
-        </div>
+      {readOnly ? (
+        <Alert className="mb-4">
+          This application is {application?.applicationStatus}. Profile edits
+          are locked until an admin decision allows changes again.
+        </Alert>
+      ) : null}
 
-        <div className="space-y-2">
-          <Label htmlFor="document">Verification document (optional)</Label>
-          <Input
-            id="document"
-            type="file"
-            accept=".pdf,image/jpeg,image/png,image/webp"
-            disabled={uploading}
-            onChange={(e) => void onUpload(e.target.files)}
-          />
+      <form
+        className="space-y-6 rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6"
+        noValidate
+      >
+        <section className="space-y-4">
+          <h2 className="font-display text-lg font-semibold text-emporia-ink">
+            Business information
+          </h2>
+          <div className="space-y-2">
+            <Label htmlFor="shopName">Shop name</Label>
+            <Input id="shopName" disabled={readOnly} {...register("shopName")} />
+            {errors.shopName ? (
+              <p className="text-sm text-emporia-danger">
+                {errors.shopName.message}
+              </p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <textarea
+              id="description"
+              disabled={readOnly}
+              className="min-h-28 w-full rounded-md border border-emporia-border bg-white px-3 py-2 text-sm text-emporia-ink shadow-sm focus-visible:border-emporia-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emporia-teal/30 disabled:opacity-60"
+              {...register("description")}
+            />
+            {errors.description ? (
+              <p className="text-sm text-emporia-danger">
+                {errors.description.message}
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="space-y-4 border-t border-emporia-border/70 pt-6">
+          <h2 className="font-display text-lg font-semibold text-emporia-ink">
+            Contact information
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="supportEmail">Support email</Label>
+              <Input
+                id="supportEmail"
+                type="email"
+                disabled={readOnly}
+                {...register("supportEmail")}
+              />
+              {errors.supportEmail ? (
+                <p className="text-sm text-emporia-danger">
+                  {errors.supportEmail.message}
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" disabled={readOnly} {...register("phone")} />
+              {errors.phone ? (
+                <p className="text-sm text-emporia-danger">
+                  {errors.phone.message}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4 border-t border-emporia-border/70 pt-6">
+          <h2 className="font-display text-lg font-semibold text-emporia-ink">
+            Documents
+          </h2>
+          {!readOnly ? (
+            <div className="space-y-2">
+              <Label htmlFor="document">Verification document (optional)</Label>
+              <Input
+                id="document"
+                type="file"
+                accept=".pdf,image/jpeg,image/png,image/webp"
+                disabled={uploading}
+                onChange={(e) => void onUpload(e.target.files)}
+              />
+            </div>
+          ) : null}
           {application?.documents?.length ? (
-            <ul className="text-xs text-emporia-muted">
+            <ul className="space-y-1 text-sm text-emporia-muted">
               {application.documents.map((d) => (
                 <li key={d.id}>
                   {d.originalName} ({Math.round(d.size / 1024)} KB)
                 </li>
               ))}
             </ul>
-          ) : null}
-        </div>
+          ) : (
+            <p className="text-sm text-emporia-muted">No documents uploaded.</p>
+          )}
+        </section>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            disabled={isSubmitting}
-            onClick={onSave}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Save draft
-          </Button>
-          <Button
-            type="button"
-            className="flex-1"
-            disabled={isSubmitting}
-            onClick={onSubmitForReview}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Submit for review
-          </Button>
-        </div>
+        {!readOnly ? (
+          <div className="flex flex-col gap-2 border-t border-emporia-border/70 pt-6 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              disabled={isSubmitting}
+              onClick={onSave}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              Save draft
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={isSubmitting}
+              onClick={onSubmitForReview}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              Submit for review
+            </Button>
+          </div>
+        ) : null}
       </form>
-    </AuthCard>
+    </div>
   );
 }

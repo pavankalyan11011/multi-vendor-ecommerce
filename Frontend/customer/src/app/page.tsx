@@ -1,12 +1,5 @@
-import { MarketingHero } from "@/components/brand/MarketingHero";
+import { ShopHome } from "@/components/shop/ShopHome";
 
 export default function HomePage() {
-  return (
-    <MarketingHero
-      primaryHref="/login"
-      primaryLabel="Sign in"
-      secondaryHref="/register"
-      secondaryLabel="Create account"
-    />
-  );
+  return <ShopHome />;
 }

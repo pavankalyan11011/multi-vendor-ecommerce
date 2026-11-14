@@ -1,10 +1,9 @@
 "use client";
 
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,10 +160,7 @@ function CreateCategoryForm() {
 
 export default function NewCategoryPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Create category" wide>
-        <CreateCategoryForm />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell><CreateCategoryForm />
+    </AdminShell>
   );
 }

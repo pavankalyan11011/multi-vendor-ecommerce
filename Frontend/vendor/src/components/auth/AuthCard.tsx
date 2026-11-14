@@ -16,7 +16,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "w-full border border-emporia-border/80 bg-white/90 p-6 shadow-emporia backdrop-blur-sm sm:p-8",
+        "w-full rounded-xl border border-emporia-border/80 bg-white p-6 shadow-emporia sm:p-8",
         className
       )}
     >
@@ -30,7 +30,9 @@ export function AuthCard({
       </div>
       {children}
       {footer ? (
-        <div className="mt-6 text-sm text-emporia-muted">{footer}</div>
+        <div className="mt-6 border-t border-emporia-border/70 pt-5 text-sm text-emporia-muted">
+          {footer}
+        </div>
       ) : null}
     </div>
   );

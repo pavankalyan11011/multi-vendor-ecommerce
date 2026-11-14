@@ -19,6 +19,7 @@ import {
   type VendorRegisterFormValues,
 } from "@/features/vendor-auth/schemas/vendor-auth.schemas";
 import { ApiError, getErrorMessage } from "@/lib/api/errors";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 export function VendorRegistrationForm() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export function VendorRegistrationForm() {
     try {
       const payload = toVendorRegisterPayload(values);
       const { user, message } = await registerVendor(payload);
-      if (user.role !== "VENDOR") {
+      if (!userHasRole(user, "VENDOR")) {
         setFormError("Unexpected account type returned by the server.");
         return;
       }

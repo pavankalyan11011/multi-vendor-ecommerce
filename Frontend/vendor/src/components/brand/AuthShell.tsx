@@ -1,19 +1,20 @@
+import Link from "next/link";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { BRAND } from "@/lib/brand";
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="relative z-10 grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+    <main className="relative z-10 grid min-h-screen bg-emporia-paper lg:grid-cols-[1.05fr_0.95fr]">
       <aside className="relative hidden overflow-hidden bg-emporia-ink lg:block">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={BRAND.heroImage}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-50"
+          className="absolute inset-0 h-full w-full object-cover opacity-45"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-emporia-ink via-emporia-ink/80 to-emporia-ink/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-emporia-ink via-emporia-ink/85 to-emporia-ink/45" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10 xl:p-14">
-          <BrandMark tone="light" />
+          <BrandMark href="/" tone="light" />
           <div className="max-w-sm space-y-3">
             <p className="font-display text-4xl font-semibold tracking-[-0.04em] text-white">
               {BRAND.name}
@@ -25,8 +26,14 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <section className="flex flex-col justify-center px-4 py-12 sm:px-8">
-        <div className="mb-8 flex justify-center lg:hidden">
-          <BrandMark />
+        <div className="mb-8 flex items-center justify-between lg:hidden">
+          <BrandMark href="/" />
+          <Link
+            href="/"
+            className="text-sm font-medium text-emporia-muted hover:text-emporia-ink"
+          >
+            Back
+          </Link>
         </div>
         <div className="mx-auto w-full max-w-md animate-fade-up">{children}</div>
       </section>

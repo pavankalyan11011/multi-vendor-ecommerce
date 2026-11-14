@@ -1,13 +1,20 @@
+import { Package } from "lucide-react";
+import { AccountPageHeader } from "@/components/account/AccountPageHeader";
+import { EmptyState } from "@/components/account/EmptyState";
+
 export default function OrdersPage() {
   return (
-    <div className="space-y-3">
-      <h2 className="font-display text-2xl font-semibold tracking-tight text-emporia-ink">
-        Orders
-      </h2>
-      <p className="text-sm leading-relaxed text-emporia-muted">
-        Order history will appear here once the orders API ships. Your session
-        and account are already live.
-      </p>
+    <div>
+      <AccountPageHeader
+        title="Orders"
+        description="Track purchases across Emporia marketplace sellers."
+      />
+      <EmptyState
+        icon={Package}
+        title="Orders are not available yet"
+        badge="Coming soon"
+        description="Order history will appear here once cart, checkout, and the orders API ship. Your account and session are already live."
+      />
     </div>
   );
 }

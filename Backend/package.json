@@ -9,9 +9,12 @@
     "test": "jest --runInBand",
     "test:auth": "jest --runInBand tests/auth.test.js",
     "test:vendor-application": "jest --runInBand tests/vendorApplication.test.js",
-    "seed:admin": "node scripts/seed-admin.js"
+    "seed:admin": "node scripts/seed-admin.js",
+    "migrate:user-roles": "node scripts/migrate-user-roles.js",
+    "storage:ensure-bucket": "node scripts/ensure-s3-bucket.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1169.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

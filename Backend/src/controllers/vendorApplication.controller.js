@@ -1,6 +1,9 @@
 const vendorApplicationService = require('../services/vendorApplication.service');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { ApiError } = require('../utils/ApiError');
+const { openStoredFile } = require('../storage');
+const { STORAGE_FOLDERS } = require('../constants/storageFolders');
+const { streamDownload } = require('../utils/streamDownload');
 
 const getMine = asyncHandler(async (req, res) => {
   const data = await vendorApplicationService.getOwnApplication(req.auth.userId);
@@ -37,8 +40,13 @@ const downloadOwnDocument = asyncHandler(async (req, res) => {
     req.params.documentId,
     { asAdmin: false }
   );
-  const filePath = await vendorApplicationService.resolveDocumentPath(doc.storedName);
-  res.download(filePath, doc.originalName);
+  const file = await openStoredFile(STORAGE_FOLDERS.VENDOR_DOCS, doc.storedName);
+  streamDownload(res, {
+    stream: file.stream,
+    filename: doc.originalName,
+    contentType: file.contentType || doc.mimeType,
+    contentLength: file.contentLength,
+  });
 });
 
 const listApplications = asyncHandler(async (req, res) => {
@@ -91,8 +99,13 @@ const downloadAdminDocument = asyncHandler(async (req, res) => {
     req.params.documentId,
     { asAdmin: true }
   );
-  const filePath = await vendorApplicationService.resolveDocumentPath(doc.storedName);
-  res.download(filePath, doc.originalName);
+  const file = await openStoredFile(STORAGE_FOLDERS.VENDOR_DOCS, doc.storedName);
+  streamDownload(res, {
+    stream: file.stream,
+    filename: doc.originalName,
+    contentType: file.contentType || doc.mimeType,
+    contentLength: file.contentLength,
+  });
 });
 
 module.exports = {

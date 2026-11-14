@@ -19,6 +19,7 @@ import {
   type RegisterFormValues,
 } from "@/features/auth/schemas/auth.schemas";
 import { ApiError, getErrorMessage } from "@/lib/api/errors";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export function RegisterForm() {
     try {
       const payload = toRegisterPayload(values);
       const user = await registerAccount(payload);
-      if (user.role !== "CUSTOMER") {
+      if (!userHasRole(user, "CUSTOMER")) {
         setFormError("Unexpected account type returned by the server.");
         return;
       }
@@ -73,11 +74,11 @@ export function RegisterForm() {
   return (
     <AuthCard
       title="Create your account"
-      description="Register as a customer to shop across marketplace vendors."
+      description="Register as a customer. Roles are assigned by the server — you cannot choose vendor or admin here."
       footer={
         <>
           Already have an account?{" "}
-          <Link className="font-medium text-emporia-ink underline-offset-4 hover:underline" href="/login">
+          <Link className="font-medium text-emporia-teal underline-offset-4 hover:underline" href="/login">
             Sign in
           </Link>
         </>

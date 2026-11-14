@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { getEnv } = require('../config/env');
+const { normalizeRoles, pickPrimaryRole } = require('../constants/roles');
 
 function hashToken(rawToken) {
   return crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -12,10 +13,12 @@ function generateRefreshToken() {
 
 function signAccessToken(user) {
   const env = getEnv();
+  const roles = normalizeRoles(user);
   return jwt.sign(
     {
       sub: user._id.toString(),
-      role: user.role,
+      role: pickPrimaryRole(roles),
+      roles,
       status: user.status,
     },
     env.jwtAccessSecret,

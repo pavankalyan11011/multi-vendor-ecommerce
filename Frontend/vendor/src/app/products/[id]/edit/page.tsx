@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { VendorGuard } from "@/components/vendor-auth/VendorGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
+import { SellerShell } from "@/components/seller-shell/SellerShell";
+import { SellerPageHeader } from "@/components/seller-shell/SellerPageHeader";
+import {
+  StatusBadge,
+  productStatusTone,
+} from "@/components/seller-shell/StatusBadge";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,77 +153,79 @@ function ProductEditor() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link
-            href="/products"
-            className="text-sm text-emporia-teal underline-offset-4 hover:underline"
-          >
-            Back to products
-          </Link>
-          <h1 className="mt-2 font-display text-2xl font-semibold text-emporia-ink">
-            {product.name}
-          </h1>
-          <p className="text-sm text-emporia-muted">
-            {product.status}
-            {product.schemaOutdated ? " · schema outdated — save to refresh" : ""}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {product.status === "DRAFT" ? (
-            <Button
-              type="button"
-              disabled={busy}
-              onClick={() =>
-                void submitProduct(product.id)
-                  .then((res) => {
-                    setProduct(res.data);
-                    setNote("Submitted for admin review.");
-                  })
-                  .catch((err) =>
-                    setError(
-                      err instanceof ApiError
-                        ? err.message
-                        : getErrorMessage(err)
+    <div className="space-y-6">
+      <SellerPageHeader
+        title={product.name}
+        description={
+          product.schemaOutdated
+            ? "Schema outdated — save to refresh attribute values."
+            : "Edit details, variants, images, and submit for review."
+        }
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge tone={productStatusTone(product.status)}>
+              {product.status.replaceAll("_", " ")}
+            </StatusBadge>
+            {product.status === "DRAFT" ? (
+              <Button
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  void submitProduct(product.id)
+                    .then((res) => {
+                      setProduct(res.data);
+                      setNote("Submitted for admin review.");
+                    })
+                    .catch((err) =>
+                      setError(
+                        err instanceof ApiError
+                          ? err.message
+                          : getErrorMessage(err)
+                      )
                     )
-                  )
-              }
-            >
-              Submit for review
-            </Button>
-          ) : null}
-          {product.status === "PENDING_REVIEW" ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() =>
-                void withdrawProduct(product.id)
-                  .then((res) => {
-                    setProduct(res.data);
-                    setNote("Withdrawn to draft.");
-                  })
-                  .catch((err) =>
-                    setError(
-                      err instanceof ApiError
-                        ? err.message
-                        : getErrorMessage(err)
+                }
+              >
+                Submit for review
+              </Button>
+            ) : null}
+            {product.status === "PENDING_REVIEW" ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() =>
+                  void withdrawProduct(product.id)
+                    .then((res) => {
+                      setProduct(res.data);
+                      setNote("Withdrawn to draft.");
+                    })
+                    .catch((err) =>
+                      setError(
+                        err instanceof ApiError
+                          ? err.message
+                          : getErrorMessage(err)
+                      )
                     )
-                  )
-              }
+                }
+              >
+                Withdraw to draft
+              </Button>
+            ) : null}
+            <Link
+              href="/products"
+              className="text-sm font-medium text-emporia-teal hover:underline"
             >
-              Withdraw to draft
-            </Button>
-          ) : null}
-        </div>
-      </div>
+              Back
+            </Link>
+          </div>
+        }
+      />
 
       {error ? <Alert variant="destructive">{error}</Alert> : null}
       {note ? <Alert variant="success">{note}</Alert> : null}
 
       <form
-        className="space-y-4 border border-emporia-border bg-white/90 p-5"
+        className="space-y-4 rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6"
         onSubmit={saveDetails}
       >
         <h2 className="font-display text-lg font-semibold text-emporia-ink">
@@ -285,7 +291,7 @@ function ProductEditor() {
         </Button>
       </form>
 
-      <div className="space-y-4 border border-emporia-border bg-white/90 p-5">
+      <div className="space-y-4 rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-semibold text-emporia-ink">
             Variants & stock
@@ -436,7 +442,7 @@ function ProductEditor() {
         ) : null}
       </div>
 
-      <div className="space-y-4 border border-emporia-border bg-white/90 p-5">
+      <div className="space-y-4 rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="font-display text-lg font-semibold text-emporia-ink">
           Images
         </h2>
@@ -477,10 +483,8 @@ function ProductEditor() {
 
 export default function EditProductPage() {
   return (
-    <VendorGuard mode="approved">
-      <PortalChrome title="Edit product" wide>
-        <ProductEditor />
-      </PortalChrome>
-    </VendorGuard>
+    <SellerShell title="Edit product">
+      <ProductEditor />
+    </SellerShell>
   );
 }

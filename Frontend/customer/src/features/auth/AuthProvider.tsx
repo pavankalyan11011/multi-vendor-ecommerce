@@ -19,6 +19,7 @@ import {
 } from "@/features/auth/services/auth.service";
 import type { AuthUser } from "@/features/auth/types";
 import type { LoginFormValues } from "@/features/auth/schemas/auth.schemas";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -152,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       refreshSession,
-      isCustomer: user?.role === "CUSTOMER",
+      isCustomer: userHasRole(user, "CUSTOMER"),
     }),
     [status, user, accessToken, login, register, logout, refreshSession]
   );
@@ -169,7 +170,7 @@ export function useAuth() {
 }
 
 export function assertCustomer(user: AuthUser | null): user is AuthUser {
-  return !!user && user.role === "CUSTOMER";
+  return !!user && userHasRole(user, "CUSTOMER");
 }
 
 export function mapLoginError(error: unknown): string {

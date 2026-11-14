@@ -77,6 +77,36 @@ function isAllowedOrigin(origin, clientOrigins, isProd) {
   }
 }
 
+function loadStorageConfig() {
+  const storageDriver = (process.env.STORAGE_DRIVER || 'local').toLowerCase();
+  if (storageDriver !== 'local' && storageDriver !== 's3') {
+    throw new Error('STORAGE_DRIVER must be "local" or "s3"');
+  }
+
+  const s3 = {
+    s3Bucket: process.env.S3_BUCKET || 'emporia-uploads',
+    s3Region: process.env.S3_REGION || 'us-east-1',
+    s3Endpoint: process.env.S3_ENDPOINT || '',
+    s3ForcePathStyle:
+      String(process.env.S3_FORCE_PATH_STYLE || 'true').toLowerCase() !== 'false',
+    awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || 'test',
+    awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'test',
+  };
+
+  if (storageDriver === 's3') {
+    if (!process.env.S3_BUCKET) {
+      throw new Error('S3_BUCKET is required when STORAGE_DRIVER=s3');
+    }
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      throw new Error(
+        'AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required when STORAGE_DRIVER=s3'
+      );
+    }
+  }
+
+  return { storageDriver, ...s3 };
+}
+
 function loadEnv() {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProd = nodeEnv === 'production';
@@ -97,6 +127,7 @@ function loadEnv() {
     refreshTokenTtlMs: Number(process.env.JWT_REFRESH_TTL_MS || 7 * 24 * 60 * 60 * 1000),
     cookieName: process.env.REFRESH_COOKIE_NAME || 'refreshToken',
     bcryptRounds: Number(process.env.BCRYPT_ROUNDS || 12),
+    ...loadStorageConfig(),
   };
 }
 

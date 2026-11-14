@@ -1,4 +1,5 @@
 import type { AuthUser } from "@/features/auth/types";
+import { userHasRole } from "@/features/auth/lib/roles";
 import { getSafeReturnPath } from "@/lib/auth/redirects";
 import type { ApplicationStatus } from "@/features/vendor-onboarding/types";
 
@@ -6,7 +7,7 @@ export function resolveVendorPostLoginPath(
   user: AuthUser,
   returnTo?: string | null
 ): string {
-  if (user.role !== "VENDOR") {
+  if (!userHasRole(user, "VENDOR")) {
     return "/access-denied";
   }
 

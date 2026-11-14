@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { VendorGuard } from "@/components/vendor-auth/VendorGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
+import { SellerShell } from "@/components/seller-shell/SellerShell";
+import { SellerPageHeader } from "@/components/seller-shell/SellerPageHeader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,110 +81,137 @@ function NewProductForm() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link
-          href="/products"
-          className="text-sm text-emporia-teal underline-offset-4 hover:underline"
-        >
-          Back to products
-        </Link>
-        <h1 className="mt-2 font-display text-2xl font-semibold text-emporia-ink">
-          Add product
-        </h1>
-        <p className="text-sm text-emporia-muted">
-          Choose a leaf category — attributes render from the admin form schema.
-        </p>
-      </div>
-
-      {error ? <Alert variant="destructive">{error}</Alert> : null}
-
-      <form
-        className="space-y-6 border border-emporia-border bg-white/90 p-5"
-        onSubmit={onSubmit}
-      >
-        <div className="space-y-2">
-          <Label htmlFor="categoryId">Category</Label>
-          <select
-            id="categoryId"
-            className="h-11 w-full rounded-md border border-emporia-border bg-white px-3 text-sm"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            required
+    <div>
+      <SellerPageHeader
+        title="Add product"
+        description="Choose a leaf category — attributes render from the admin form schema."
+        action={
+          <Link
+            href="/products"
+            className="text-sm font-medium text-emporia-teal hover:underline"
           >
-            {leaves.length === 0 ? (
-              <option value="">No leaf categories available</option>
-            ) : (
-              leaves.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.path}
-                </option>
-              ))
-            )}
-          </select>
-        </div>
+            Back to products
+          </Link>
+        }
+      />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="name">Product name</Label>
+      {error ? <Alert variant="destructive" className="mb-4">{error}</Alert> : null}
+
+      <form className="space-y-6" onSubmit={onSubmit}>
+        <section className="rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="font-display text-lg font-semibold text-emporia-ink">
+            Basic information
+          </h2>
+          <p className="mt-1 text-sm text-emporia-muted">
+            Core listing details for your draft product.
+          </p>
+          <div className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="categoryId">Category</Label>
+              <select
+                id="categoryId"
+                className="h-11 w-full rounded-md border border-emporia-border bg-white px-3 text-sm"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+              >
+                {leaves.length === 0 ? (
+                  <option value="">No leaf categories available</option>
+                ) : (
+                  leaves.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.path}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Product name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brand">Brand</Label>
+                <Input
+                  id="brand"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                className="min-h-28 w-full rounded-md border border-emporia-border bg-white px-3 py-2 text-sm"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="font-display text-lg font-semibold text-emporia-ink">
+            Pricing
+          </h2>
+          <p className="mt-1 text-sm text-emporia-muted">
+            Base price when the product has no variants. Variant pricing is set
+            on the next screen.
+          </p>
+          <div className="mt-4 max-w-xs space-y-2">
+            <Label htmlFor="basePrice">Base price</Label>
             <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              id="basePrice"
+              type="number"
+              min={0}
+              value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="brand">Brand</Label>
-            <Input
-              id="brand"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-            />
-          </div>
-        </div>
+        </section>
 
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <textarea
-            id="description"
-            className="min-h-28 w-full rounded-md border border-emporia-border bg-white px-3 py-2 text-sm"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="basePrice">Base price (if no variants)</Label>
-          <Input
-            id="basePrice"
-            type="number"
-            min={0}
-            value={basePrice}
-            onChange={(e) => setBasePrice(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <h2 className="mb-3 font-display text-lg font-semibold text-emporia-ink">
+        <section className="rounded-xl border border-emporia-border/80 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="font-display text-lg font-semibold text-emporia-ink">
             Category attributes
           </h2>
-          {schema ? (
-            <DynamicAttributeFields
-              fields={schema.fields}
-              values={attrValues}
-              onChange={(code, value) =>
-                setAttrValues((prev) => ({ ...prev, [code]: value }))
-              }
-            />
-          ) : (
-            <p className="text-sm text-emporia-muted">Loading schema...</p>
-          )}
-        </div>
+          <p className="mt-1 text-sm text-emporia-muted">
+            Fields come from the category form schema configured by admins.
+          </p>
+          <div className="mt-4">
+            {schema ? (
+              <DynamicAttributeFields
+                fields={schema.fields}
+                values={attrValues}
+                onChange={(code, value) =>
+                  setAttrValues((prev) => ({ ...prev, [code]: value }))
+                }
+              />
+            ) : (
+              <p className="text-sm text-emporia-muted">Loading schema…</p>
+            )}
+          </div>
+        </section>
 
-        <Button type="submit" disabled={busy || !leaves.length}>
-          {busy ? "Creating..." : "Save draft & continue"}
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button type="submit" disabled={busy || !leaves.length}>
+            {busy ? "Creating…" : "Save draft & continue"}
+          </Button>
+          <Link
+            href="/products"
+            className="inline-flex h-11 items-center rounded-md border border-emporia-border bg-white px-4 text-sm font-medium text-emporia-ink hover:bg-emporia-mist"
+          >
+            Cancel
+          </Link>
+        </div>
       </form>
     </div>
   );
@@ -192,10 +219,8 @@ function NewProductForm() {
 
 export default function NewProductPage() {
   return (
-    <VendorGuard mode="approved">
-      <PortalChrome title="New product" wide>
-        <NewProductForm />
-      </PortalChrome>
-    </VendorGuard>
+    <SellerShell title="Add product">
+      <NewProductForm />
+    </SellerShell>
   );
 }

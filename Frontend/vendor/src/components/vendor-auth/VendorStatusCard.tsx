@@ -13,6 +13,7 @@ import {
 } from "@/features/vendor-auth/lib/vendor-routing";
 import { getVendorApplication } from "@/features/vendor-onboarding/services/vendor-application.service";
 import type { VendorApplication } from "@/features/vendor-onboarding/types";
+import { userHasRole } from "@/features/auth/lib/roles";
 import { getErrorMessage } from "@/lib/api/errors";
 
 export function VendorStatusCard({
@@ -28,7 +29,7 @@ export function VendorStatusCard({
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    if (status !== "authenticated" || user?.role !== "VENDOR") return;
+    if (status !== "authenticated" || !userHasRole(user, "VENDOR")) return;
     let cancelled = false;
     (async () => {
       try {
@@ -44,7 +45,7 @@ export function VendorStatusCard({
   }, [status, user?.role]);
 
   const accountCopy =
-    user && user.role === "VENDOR"
+    user && userHasRole(user, "VENDOR")
       ? describeVendorStatus(user.status)
       : {
           title:
@@ -65,7 +66,7 @@ export function VendorStatusCard({
     setBusy(true);
     setNote("");
     const next = await refreshSession();
-    if (next?.role === "VENDOR") {
+    if (userHasRole(next, "VENDOR")) {
       try {
         const res = await getVendorApplication();
         setApplication(res.data);
@@ -78,7 +79,7 @@ export function VendorStatusCard({
       setNote("Could not refresh session. Please sign in again.");
       return;
     }
-    if (next.role === "VENDOR" && next.status === "ACTIVE") {
+    if (userHasRole(next, "VENDOR") && next.status === "ACTIVE") {
       router.replace("/dashboard");
       return;
     }

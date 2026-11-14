@@ -121,6 +121,27 @@ export async function getCategoryFormSchema(id: string) {
   );
 }
 
+export async function listCategories(params?: {
+  status?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+  parentId?: string;
+}) {
+  const search = new URLSearchParams();
+  if (params?.status) search.set("status", params.status);
+  if (params?.q) search.set("q", params.q);
+  if (params?.page) search.set("page", String(params.page));
+  if (params?.limit) search.set("limit", String(params.limit));
+  if (params?.parentId !== undefined) search.set("parentId", params.parentId);
+  const qs = search.toString();
+  return apiFetch<ApiSuccess<{ items: Category[]; pagination: Pagination }>>(
+    `${API_ENDPOINTS.admin.categories}${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+    { auth: true }
+  );
+}
+
 export async function listAttributes(params?: {
   q?: string;
   status?: string;

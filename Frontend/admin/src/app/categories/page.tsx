@@ -1,9 +1,8 @@
 "use client";
 
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -223,7 +222,7 @@ function CategoriesTree() {
       ) : tree.length === 0 ? (
         <Alert>No categories yet. Create a root category to begin.</Alert>
       ) : (
-        <div className="border border-emporia-border bg-white/90 px-4">
+        <div className="rounded-xl border border-emporia-border/80 bg-white px-4 shadow-sm">
           <TreeRows
             nodes={tree}
             expanded={expanded}
@@ -240,10 +239,7 @@ function CategoriesTree() {
 
 export default function CategoriesPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Catalog" wide>
-        <CategoriesTree />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell><CategoriesTree />
+    </AdminShell>
   );
 }

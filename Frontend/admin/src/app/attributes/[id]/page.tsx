@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -211,10 +210,8 @@ function AttributeEditor() {
 
 export default function AttributeDetailPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Edit attribute" wide>
-        <AttributeEditor />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell title="Edit attribute">
+      <AttributeEditor />
+    </AdminShell>
   );
 }

@@ -1,8 +1,18 @@
 const { User } = require('../models/User');
+const {
+  VendorApplication,
+} = require('../models/VendorApplication');
 const { ApiError } = require('../utils/ApiError');
 const { verifyAccessToken } = require('../utils/tokens');
 const { STATUSES } = require('../constants/statuses');
-const { ROLES } = require('../constants/roles');
+const { APPLICATION_STATUSES } = require('../constants/applicationStatuses');
+const {
+  ROLES,
+  normalizeRoles,
+  pickPrimaryRole,
+  userHasRole,
+  userHasAnyRole,
+} = require('../constants/roles');
 
 async function requireAuth(req, _res, next) {
   try {
@@ -31,10 +41,12 @@ async function requireAuth(req, _res, next) {
       throw new ApiError(403, 'ACCOUNT_SUSPENDED', 'Account is suspended');
     }
 
+    const roles = normalizeRoles(user);
     // Never trust client-provided role/status — reload from DB
     req.auth = {
       userId: user._id.toString(),
-      role: user.role,
+      role: pickPrimaryRole(roles),
+      roles,
       status: user.status,
       user,
     };
@@ -49,30 +61,59 @@ function requireRoles(...roles) {
     if (!req.auth) {
       return next(new ApiError(401, 'UNAUTHORIZED', 'Authentication required'));
     }
-    if (!roles.includes(req.auth.role)) {
+    if (!userHasAnyRole(req.auth, roles)) {
       return next(new ApiError(403, 'FORBIDDEN', 'Insufficient role privileges'));
     }
     return next();
   };
 }
 
-function requireApprovedVendor(req, _res, next) {
-  if (!req.auth) {
-    return next(new ApiError(401, 'UNAUTHORIZED', 'Authentication required'));
-  }
-  if (req.auth.role !== ROLES.VENDOR) {
-    return next(new ApiError(403, 'FORBIDDEN', 'Vendor role required'));
-  }
-  if (req.auth.status !== STATUSES.ACTIVE) {
-    return next(
-      new ApiError(
+async function requireApprovedVendor(req, _res, next) {
+  try {
+    if (!req.auth) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
+    }
+    if (!userHasRole(req.auth, ROLES.VENDOR)) {
+      throw new ApiError(403, 'FORBIDDEN', 'Vendor role required');
+    }
+    if (req.auth.status === STATUSES.SUSPENDED) {
+      throw new ApiError(
         403,
         'VENDOR_NOT_APPROVED',
         'Vendor account is pending approval or not active'
-      )
-    );
+      );
+    }
+
+    if (req.auth.status !== STATUSES.ACTIVE) {
+      throw new ApiError(
+        403,
+        'VENDOR_NOT_APPROVED',
+        'Vendor account is pending approval or not active'
+      );
+    }
+
+    const application = await VendorApplication.findOne({
+      userId: req.auth.userId,
+    }).lean();
+
+    // If an application exists, it must be APPROVED (multi-role ACTIVE
+    // customers who just added VENDOR stay blocked until admin approval).
+    // Legacy ACTIVE vendors with no application row remain allowed.
+    if (
+      application &&
+      application.applicationStatus !== APPLICATION_STATUSES.APPROVED
+    ) {
+      throw new ApiError(
+        403,
+        'VENDOR_NOT_APPROVED',
+        'Vendor account is pending approval or not active'
+      );
+    }
+
+    return next();
+  } catch (err) {
+    return next(err);
   }
-  return next();
 }
 
 function requireActiveAccount(req, _res, next) {

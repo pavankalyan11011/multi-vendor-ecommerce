@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const mongoose = require('mongoose');
 const { Category, toPublicCategory } = require('../models/Category');
 const { CategoryAttribute } = require('../models/CategoryAttribute');
@@ -13,19 +11,8 @@ const {
   CATEGORY_STATUSES,
   MAX_CATEGORY_DEPTH,
 } = require('../constants/categoryStatuses');
-
-function categoryUploadsDir() {
-  return path.join(process.cwd(), 'uploads', 'category-images');
-}
-
-function resolveCategoryImagePath(storedName) {
-  const root = path.resolve(categoryUploadsDir());
-  const full = path.resolve(root, storedName);
-  if (!full.startsWith(root + path.sep) && full !== root) {
-    throw new ApiError(400, 'INVALID_PATH', 'Invalid image path');
-  }
-  return full;
-}
+const { STORAGE_FOLDERS } = require('../constants/storageFolders');
+const { removeStoredFile } = require('../storage');
 
 function buildPath(parentPath, slug) {
   if (!parentPath) return `/${slug}`;
@@ -432,7 +419,11 @@ async function listTree({ includeInactive = false } = {}) {
 async function setCategoryImage(id, file, actorId) {
   const doc = await Category.findById(id);
   if (!doc) {
-    if (file?.path) fs.unlink(file.path, () => undefined);
+    if (file?.filename) {
+      await removeStoredFile(STORAGE_FOLDERS.CATEGORY_IMAGES, file.filename).catch(
+        () => undefined
+      );
+    }
     throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Category not found');
   }
 
@@ -447,11 +438,9 @@ async function setCategoryImage(id, file, actorId) {
   await doc.save();
 
   if (previous && previous !== file.filename) {
-    try {
-      fs.unlinkSync(resolveCategoryImagePath(previous));
-    } catch {
-      // ignore missing previous file
-    }
+    await removeStoredFile(STORAGE_FOLDERS.CATEGORY_IMAGES, previous).catch(
+      () => undefined
+    );
   }
 
   await writeAuditLog({
@@ -501,8 +490,6 @@ module.exports = {
   listTree,
   setCategoryImage,
   listCategoryAudit,
-  categoryUploadsDir,
-  resolveCategoryImagePath,
   nestTree,
   MAX_CATEGORY_DEPTH,
 };

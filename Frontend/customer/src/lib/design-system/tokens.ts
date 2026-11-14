@@ -1,27 +1,28 @@
 /**
- * Emporia design tokens — ink teal commerce, cool mist surfaces, lime spark.
- * Map into CSS variables in globals.css; prefer Tailwind `emporia.*` utilities.
+ * Emporia Shop design tokens — charcoal headings, teal accent, warm-neutral surfaces.
+ * Prefer Tailwind `emporia.*` utilities in components.
  */
 export const tokens = {
   color: {
-    ink: "#0B1F1C",
-    inkSoft: "#163532",
-    mist: "#E4EDEC",
-    paper: "#F2F6F5",
+    ink: "#102B28",
+    inkSoft: "#172B28",
+    mist: "#EEF3F1",
+    paper: "#F8FAF9",
     white: "#FFFFFF",
-    teal: "#0F766E",
-    tealBright: "#2DD4BF",
+    teal: "#087F73",
+    tealBright: "#0D9A8C",
     lime: "#D9F99D",
+    gold: "#C8A76A",
     danger: "#B91C1C",
     dangerSoft: "#FEF2F2",
     success: "#047857",
     successSoft: "#ECFDF5",
-    muted: "#5B736F",
-    border: "#C5D4D1",
+    muted: "#64748B",
+    border: "#E5EAE8",
   },
   radius: {
     sm: "0.375rem",
-    md: "0.625rem",
+    md: "0.75rem",
     lg: "1rem",
   },
   space: {

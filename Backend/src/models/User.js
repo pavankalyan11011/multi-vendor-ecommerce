@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
-const { ROLE_VALUES, ROLES } = require('../constants/roles');
+const {
+  ROLE_VALUES,
+  ROLES,
+  normalizeRoles,
+  pickPrimaryRole,
+} = require('../constants/roles');
 const { STATUS_VALUES, STATUSES } = require('../constants/statuses');
 
 const userSchema = new mongoose.Schema(
@@ -25,11 +30,35 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
+    /**
+     * Primary role (highest privilege). Kept for JWT + legacy callers.
+     * Prefer `roles` for authorization checks.
+     */
     role: {
       type: String,
       enum: ROLE_VALUES,
       required: true,
       default: ROLES.CUSTOMER,
+    },
+    /**
+     * All roles this global account may use across portals.
+     * Example: ADMIN + CUSTOMER → Console and Shop with one email.
+     */
+    roles: {
+      type: [
+        {
+          type: String,
+          enum: ROLE_VALUES,
+        },
+      ],
+      default: undefined,
+      validate: {
+        validator(arr) {
+          if (arr === undefined || arr === null) return true;
+          return Array.isArray(arr) && arr.length >= 1;
+        },
+        message: 'roles must contain at least one role',
+      },
     },
     status: {
       type: String,
@@ -58,7 +87,17 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.pre('validate', function syncRolesBeforeValidate() {
+  const roles = normalizeRoles(this);
+  if (roles.length === 0) {
+    roles.push(this.role || ROLES.CUSTOMER);
+  }
+  this.roles = [...new Set(roles)];
+  this.role = pickPrimaryRole(this.roles);
+});
+
 userSchema.index({ role: 1, status: 1 });
+userSchema.index({ roles: 1, status: 1 });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
