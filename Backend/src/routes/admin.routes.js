@@ -31,10 +31,12 @@ const {
   rejectProductSchema,
   listRevisionsQuerySchema,
 } = require('../validators/product.schemas');
+const { listOrdersQuerySchema } = require('../validators/order.schemas');
 const vendorApplicationController = require('../controllers/vendorApplication.controller');
 const categoryController = require('../controllers/category.controller');
 const attributeController = require('../controllers/attribute.controller');
 const productModerationController = require('../controllers/productModeration.controller');
+const orderController = require('../controllers/order.controller');
 const { handleCategoryImageUpload } = require('../middleware/upload');
 const { asyncHandler } = require('../utils/asyncHandler');
 
@@ -254,5 +256,14 @@ router.post(
   validateBody(rejectProductSchema),
   productModerationController.rejectRevision
 );
+
+router.get(
+  '/orders',
+  ...adminGate,
+  validateQuery(listOrdersQuerySchema),
+  orderController.listAdmin
+);
+
+router.get('/orders/:id', ...adminGate, orderController.getAdmin);
 
 module.exports = router;

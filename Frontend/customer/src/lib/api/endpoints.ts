@@ -10,7 +10,43 @@ export const API_ENDPOINTS = {
     logout: "/auth/logout",
     refresh: "/auth/refresh",
   },
+  catalog: {
+    products: "/products",
+    product: (id: string) => `/products/${id}`,
+  },
+  cart: {
+    root: "/cart",
+    items: "/cart/items",
+    item: (productId: string) => `/cart/items/${productId}`,
+  },
+  orders: {
+    checkout: "/orders/checkout",
+    pay: (id: string) => `/orders/${id}/pay`,
+    createPayment: (id: string) => `/orders/${id}/payments/razorpay`,
+    verifyPayment: (id: string) => `/orders/${id}/payments/verify`,
+    me: "/orders/me",
+    mine: (id: string) => `/orders/me/${id}`,
+  },
 } as const;
 
+type AuthPath = (typeof API_ENDPOINTS.auth)[keyof typeof API_ENDPOINTS.auth];
+type CatalogStatic = typeof API_ENDPOINTS.catalog.products;
+type CatalogDynamic = ReturnType<typeof API_ENDPOINTS.catalog.product>;
+type CartPath =
+  | typeof API_ENDPOINTS.cart.root
+  | typeof API_ENDPOINTS.cart.items
+  | ReturnType<typeof API_ENDPOINTS.cart.item>;
+type OrderPath =
+  | typeof API_ENDPOINTS.orders.checkout
+  | typeof API_ENDPOINTS.orders.me
+  | ReturnType<typeof API_ENDPOINTS.orders.pay>
+  | ReturnType<typeof API_ENDPOINTS.orders.createPayment>
+  | ReturnType<typeof API_ENDPOINTS.orders.verifyPayment>
+  | ReturnType<typeof API_ENDPOINTS.orders.mine>;
+
 export type ApiEndpointPath =
-  (typeof API_ENDPOINTS.auth)[keyof typeof API_ENDPOINTS.auth];
+  | AuthPath
+  | CatalogStatic
+  | CatalogDynamic
+  | CartPath
+  | OrderPath;

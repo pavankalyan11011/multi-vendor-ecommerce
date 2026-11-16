@@ -15,8 +15,13 @@ const {
   handleVendorDocumentUpload,
   handleProductImageUpload,
 } = require('../middleware/upload');
+const {
+  listOrdersQuerySchema,
+  fulfillmentSchema,
+} = require('../validators/order.schemas');
 const vendorApplicationController = require('../controllers/vendorApplication.controller');
 const productController = require('../controllers/product.controller');
+const orderController = require('../controllers/order.controller');
 const { asyncHandler } = require('../utils/asyncHandler');
 
 const router = express.Router();
@@ -145,6 +150,20 @@ router.patch(
   ...approvedVendor,
   validateBody(reorderMediaSchema),
   productController.reorderImages
+);
+
+router.get(
+  '/orders',
+  ...approvedVendor,
+  validateQuery(listOrdersQuerySchema),
+  orderController.listVendor
+);
+
+router.patch(
+  '/orders/:orderId/items/:itemId/fulfillment',
+  ...approvedVendor,
+  validateBody(fulfillmentSchema),
+  orderController.updateFulfillment
 );
 
 module.exports = router;
