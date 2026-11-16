@@ -26,6 +26,16 @@ body {
   min-height: 100vh;
 }
 
+/* Console app shell — operational SaaS surface (no marketing gradients) */
+body:has(.admin-app) {
+  background: #f4f6f5;
+  background-attachment: scroll;
+}
+
+body:has(.admin-app)::before {
+  display: none;
+}
+
 body::before {
   content: "";
   pointer-events: none;

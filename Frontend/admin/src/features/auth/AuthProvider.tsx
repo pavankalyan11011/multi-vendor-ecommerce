@@ -18,6 +18,7 @@ import {
 } from "@/features/auth/services/auth.service";
 import type { AuthUser } from "@/features/auth/types";
 import type { LoginFormValues } from "@/features/auth/schemas/auth.schemas";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -138,8 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       refreshSession,
-      isAdmin: user?.role === "ADMIN",
-      isActiveAdmin: user?.role === "ADMIN" && user?.status === "ACTIVE",
+      isAdmin: userHasRole(user, "ADMIN"),
+      isActiveAdmin: userHasRole(user, "ADMIN") && user?.status === "ACTIVE",
     }),
     [status, user, accessToken, login, logout, refreshSession]
   );
@@ -156,11 +157,11 @@ export function useAuth() {
 }
 
 export function assertAdmin(user: AuthUser | null): user is AuthUser {
-  return !!user && user.role === "ADMIN";
+  return !!user && userHasRole(user, "ADMIN");
 }
 
 export function getAdminDestination(user: AuthUser): string {
-  if (user.role !== "ADMIN" || user.status !== "ACTIVE") {
+  if (!userHasRole(user, "ADMIN") || user.status !== "ACTIVE") {
     return "/access-denied";
   }
   return "/dashboard";

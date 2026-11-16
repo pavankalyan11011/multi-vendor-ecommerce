@@ -1,7 +1,13 @@
 const crypto = require('crypto');
 const { User } = require('../models/User');
 const { RefreshToken } = require('../models/RefreshToken');
-const { ROLES } = require('../constants/roles');
+const {
+  ROLES,
+  normalizeRoles,
+  pickPrimaryRole,
+  userHasRole,
+  addRole,
+} = require('../constants/roles');
 const { STATUSES } = require('../constants/statuses');
 const { ApiError } = require('../utils/ApiError');
 const { hashPassword, verifyPassword } = require('../utils/password');
@@ -19,11 +25,13 @@ const {
 function toPublicUser(user) {
   const obj = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
   delete obj.passwordHash;
+  const roles = normalizeRoles(obj);
   return {
     id: obj._id?.toString?.() || obj.id,
     fullName: obj.fullName,
     email: obj.email,
-    role: obj.role,
+    role: pickPrimaryRole(roles),
+    roles,
     status: obj.status,
     emailVerified: obj.emailVerified,
     lastLoginAt: obj.lastLoginAt,
@@ -34,9 +42,22 @@ function toPublicUser(user) {
 
 async function registerCustomer({ fullName, email, password }) {
   const normalizedEmail = email.trim().toLowerCase();
-  const existing = await User.findOne({ email: normalizedEmail }).lean();
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) {
-    throw new ApiError(409, 'DUPLICATE_EMAIL', 'An account with this email already exists');
+    // Same global account: grant CUSTOMER without creating a duplicate email.
+    if (userHasRole(existing, ROLES.CUSTOMER)) {
+      throw new ApiError(
+        409,
+        'DUPLICATE_EMAIL',
+        'An account with this email already exists'
+      );
+    }
+    addRole(existing, ROLES.CUSTOMER);
+    if (existing.status === STATUSES.PENDING && !userHasRole(existing, ROLES.VENDOR)) {
+      existing.status = STATUSES.ACTIVE;
+    }
+    await existing.save();
+    return toPublicUser(existing);
   }
 
   const passwordHash = await hashPassword(password);
@@ -45,6 +66,7 @@ async function registerCustomer({ fullName, email, password }) {
     email: normalizedEmail,
     passwordHash,
     role: ROLES.CUSTOMER,
+    roles: [ROLES.CUSTOMER],
     status: STATUSES.ACTIVE,
     emailVerified: false,
   });
@@ -54,9 +76,25 @@ async function registerCustomer({ fullName, email, password }) {
 
 async function registerVendor({ fullName, email, password }) {
   const normalizedEmail = email.trim().toLowerCase();
-  const existing = await User.findOne({ email: normalizedEmail }).lean();
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) {
-    throw new ApiError(409, 'DUPLICATE_EMAIL', 'An account with this email already exists');
+    if (userHasRole(existing, ROLES.VENDOR)) {
+      throw new ApiError(
+        409,
+        'DUPLICATE_EMAIL',
+        'An account with this email already exists'
+      );
+    }
+    // Existing customer/admin can add seller capability on the same account.
+    addRole(existing, ROLES.VENDOR);
+    // Keep ACTIVE accounts ACTIVE (Shop/Console). Seller catalog still requires
+    // an APPROVED vendor application (see requireApprovedVendor).
+    if (existing.status !== STATUSES.ACTIVE && existing.status !== STATUSES.SUSPENDED) {
+      existing.status = STATUSES.PENDING;
+    }
+    await existing.save();
+    await ensureVendorApplication(existing._id);
+    return toPublicUser(existing);
   }
 
   const passwordHash = await hashPassword(password);
@@ -65,6 +103,7 @@ async function registerVendor({ fullName, email, password }) {
     email: normalizedEmail,
     passwordHash,
     role: ROLES.VENDOR,
+    roles: [ROLES.VENDOR],
     status: STATUSES.PENDING,
     emailVerified: false,
   });

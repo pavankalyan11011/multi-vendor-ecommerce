@@ -14,3 +14,4 @@ process.env.REFRESH_COOKIE_NAME = 'refreshToken';
 process.env.BCRYPT_ROUNDS = '4';
 process.env.MONGODB_URI =
   process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/test-placeholder';
+process.env.STORAGE_DRIVER = 'local';

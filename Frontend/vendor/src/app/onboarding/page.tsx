@@ -1,12 +1,12 @@
 "use client";
 
-import { VendorGuard } from "@/components/vendor-auth/VendorGuard";
+import { SellerShell } from "@/components/seller-shell/SellerShell";
 import { BusinessProfileForm } from "@/components/vendor-onboarding/BusinessProfileForm";
 
 export default function OnboardingPage() {
   return (
-    <VendorGuard mode="status">
+    <SellerShell title="Business profile" mode="status">
       <BusinessProfileForm />
-    </VendorGuard>
+    </SellerShell>
   );
 }

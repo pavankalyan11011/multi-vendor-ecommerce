@@ -96,6 +96,42 @@ const listProductsQuerySchema = z
   })
   .strict();
 
+const listAdminProductsQuerySchema = z
+  .object({
+    status: z
+      .enum(['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'])
+      .optional(),
+    vendorId: z.string().regex(OBJECT_ID_REGEX).optional(),
+    q: z.string().trim().max(120).optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
+const rejectProductSchema = z
+  .object({
+    reason: z.string().trim().min(3).max(1000),
+  })
+  .strict();
+
+const listRevisionsQuerySchema = z
+  .object({
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']).optional(),
+    productId: z.string().regex(OBJECT_ID_REGEX).optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
+const listPublicProductsQuerySchema = z
+  .object({
+    categoryId: z.string().regex(OBJECT_ID_REGEX).optional(),
+    q: z.string().trim().max(120).optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
 module.exports = {
   createProductSchema,
   updateProductSchema,
@@ -103,4 +139,8 @@ module.exports = {
   adjustStockSchema,
   reorderMediaSchema,
   listProductsQuerySchema,
+  listAdminProductsQuerySchema,
+  rejectProductSchema,
+  listRevisionsQuerySchema,
+  listPublicProductsQuerySchema,
 };

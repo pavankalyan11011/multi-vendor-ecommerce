@@ -18,6 +18,7 @@ import {
   type VendorLoginFormValues,
 } from "@/features/vendor-auth/schemas/vendor-auth.schemas";
 import { resolveVendorPostLoginPath } from "@/features/vendor-auth/lib/vendor-routing";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 export function VendorLoginForm() {
   const router = useRouter();
@@ -38,9 +39,9 @@ export function VendorLoginForm() {
     setFormError("");
     try {
       const user = await login(values);
-      if (user.role !== "VENDOR") {
+      if (!userHasRole(user, "VENDOR")) {
         setFormError(
-          "This portal is for sellers only. Customer and admin accounts cannot access vendor tools here."
+          "This portal is for sellers only. Your account does not include the vendor role."
         );
         return;
       }

@@ -1,11 +1,9 @@
-const path = require('path');
-const fs = require('fs/promises');
 const { User } = require('../models/User');
 const {
   VendorApplication,
   toPublicApplication,
 } = require('../models/VendorApplication');
-const { ROLES } = require('../constants/roles');
+const { ROLES, userHasRole } = require('../constants/roles');
 const { STATUSES } = require('../constants/statuses');
 const { APPLICATION_STATUSES } = require('../constants/applicationStatuses');
 const { AUDIT_ACTIONS } = require('../constants/auditActions');
@@ -165,21 +163,6 @@ async function getDocumentForDownload(userId, documentId, { asAdmin = false } = 
   return { app, doc };
 }
 
-function uploadsDir() {
-  return path.join(process.cwd(), 'uploads', 'vendor-docs');
-}
-
-async function resolveDocumentPath(storedName) {
-  const full = path.join(uploadsDir(), storedName);
-  const normalizedRoot = path.resolve(uploadsDir());
-  const normalizedFile = path.resolve(full);
-  if (!normalizedFile.startsWith(normalizedRoot + path.sep)) {
-    throw new ApiError(400, 'INVALID_PATH', 'Invalid document path');
-  }
-  await fs.access(normalizedFile);
-  return normalizedFile;
-}
-
 async function listApplications(query) {
   const { page, limit, skip } = parsePagination(query);
   const filter = {};
@@ -266,7 +249,7 @@ async function approveApplication(applicationId, adminUserId) {
   }
 
   const user = await User.findById(app.userId);
-  if (!user || user.role !== ROLES.VENDOR) {
+  if (!user || !userHasRole(user, ROLES.VENDOR)) {
     throw new ApiError(404, 'NOT_FOUND', 'Vendor account not found');
   }
   if (user._id.toString() === adminUserId) {
@@ -313,7 +296,7 @@ async function rejectApplication(applicationId, adminUserId, reason) {
   }
 
   const user = await User.findById(app.userId);
-  if (!user || user.role !== ROLES.VENDOR) {
+  if (!user || !userHasRole(user, ROLES.VENDOR)) {
     throw new ApiError(404, 'NOT_FOUND', 'Vendor account not found');
   }
   if (user._id.toString() === adminUserId) {
@@ -353,7 +336,7 @@ async function suspendVendorAccount(targetUserId, adminUserId, reason) {
     throw new ApiError(403, 'FORBIDDEN', 'Cannot suspend your own account via this endpoint');
   }
   const user = await User.findById(targetUserId);
-  if (!user || user.role !== ROLES.VENDOR) {
+  if (!user || !userHasRole(user, ROLES.VENDOR)) {
     throw new ApiError(404, 'NOT_FOUND', 'Vendor account not found');
   }
   if (user.status === STATUSES.SUSPENDED) {
@@ -389,7 +372,7 @@ async function reactivateVendorAccount(targetUserId, adminUserId) {
     throw new ApiError(403, 'FORBIDDEN', 'Cannot reactivate your own account via this endpoint');
   }
   const user = await User.findById(targetUserId);
-  if (!user || user.role !== ROLES.VENDOR) {
+  if (!user || !userHasRole(user, ROLES.VENDOR)) {
     throw new ApiError(404, 'NOT_FOUND', 'Vendor account not found');
   }
   if (user.status !== STATUSES.SUSPENDED) {
@@ -434,8 +417,6 @@ module.exports = {
   submitOwnApplication,
   addDocument,
   getDocumentForDownload,
-  resolveDocumentPath,
-  uploadsDir,
   listApplications,
   getApplicationById,
   approveApplication,

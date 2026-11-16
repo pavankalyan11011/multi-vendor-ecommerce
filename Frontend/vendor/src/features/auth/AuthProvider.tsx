@@ -19,6 +19,7 @@ import {
 } from "@/features/auth/services/auth.service";
 import type { AuthUser } from "@/features/auth/types";
 import type { LoginFormValues } from "@/features/auth/schemas/auth.schemas";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -153,8 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       registerVendor,
       logout,
       refreshSession,
-      isVendor: user?.role === "VENDOR",
-      isApprovedVendor: user?.role === "VENDOR" && user?.status === "ACTIVE",
+      isVendor: userHasRole(user, "VENDOR"),
+      isApprovedVendor: userHasRole(user, "VENDOR") && user?.status === "ACTIVE",
     }),
     [
       status,
@@ -179,11 +180,11 @@ export function useAuth() {
 }
 
 export function assertVendor(user: AuthUser | null): user is AuthUser {
-  return !!user && user.role === "VENDOR";
+  return !!user && userHasRole(user, "VENDOR");
 }
 
 export function getVendorDestination(user: AuthUser): string {
-  if (user.role !== "VENDOR") {
+  if (!userHasRole(user, "VENDOR")) {
     return "/access-denied";
   }
   if (user.status === "PENDING") {

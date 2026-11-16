@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const mongoose = require('mongoose');
 const { Product, toPublicProduct } = require('../models/Product');
 const {
@@ -21,24 +19,14 @@ const {
   MAX_PRODUCT_IMAGES,
   MAX_VARIANTS_PER_PRODUCT,
 } = require('../constants/productStatuses');
+const { STORAGE_FOLDERS } = require('../constants/storageFolders');
+const { removeStoredFile } = require('../storage');
 const { getFormSchema } = require('./categoryAttribute.service');
 const {
   buildAttributeValuesFromInput,
   detectSchemaOutdated,
 } = require('./attributeValue.validation');
-
-function productUploadsDir() {
-  return path.join(process.cwd(), 'uploads', 'product-images');
-}
-
-function resolveProductImagePath(storedName) {
-  const root = path.resolve(productUploadsDir());
-  const full = path.resolve(root, storedName);
-  if (!full.startsWith(root + path.sep) && full !== root) {
-    throw new ApiError(400, 'INVALID_PATH', 'Invalid image path');
-  }
-  return full;
-}
+const { upsertPendingRevision } = require('./productModeration.service');
 
 async function assertLeafActiveCategory(categoryId) {
   if (!mongoose.isValidObjectId(categoryId)) {
@@ -83,17 +71,37 @@ async function getOwnedProduct(productId, vendorId) {
   return product;
 }
 
-function assertEditable(product) {
+function assertEditable(product, { allowApprovedWorkingCopy = false } = {}) {
   if (
-    product.status !== PRODUCT_STATUSES.DRAFT &&
-    product.status !== PRODUCT_STATUSES.PENDING_REVIEW
+    product.status === PRODUCT_STATUSES.DRAFT ||
+    product.status === PRODUCT_STATUSES.PENDING_REVIEW ||
+    product.status === PRODUCT_STATUSES.REJECTED
   ) {
-    throw new ApiError(
-      409,
-      'PRODUCT_LOCKED',
-      'Approved/rejected products cannot be edited in Phase 3B'
-    );
+    return;
   }
+  if (allowApprovedWorkingCopy && product.status === PRODUCT_STATUSES.APPROVED) {
+    return;
+  }
+  throw new ApiError(
+    409,
+    'PRODUCT_LOCKED',
+    'This product cannot be edited in its current status'
+  );
+}
+
+function assertStockAdjustable(product) {
+  if (
+    product.status === PRODUCT_STATUSES.DRAFT ||
+    product.status === PRODUCT_STATUSES.PENDING_REVIEW ||
+    product.status === PRODUCT_STATUSES.APPROVED
+  ) {
+    return;
+  }
+  throw new ApiError(
+    409,
+    'PRODUCT_LOCKED',
+    'Stock can only be adjusted on draft, pending, or approved products'
+  );
 }
 
 async function loadProductBundle(product) {
@@ -164,7 +172,13 @@ async function createProduct(payload, vendorId) {
 
 async function updateProduct(productId, payload, vendorId) {
   const product = await getOwnedProduct(productId, vendorId);
-  assertEditable(product);
+  const wasApproved = product.status === PRODUCT_STATUSES.APPROVED;
+  assertEditable(product, { allowApprovedWorkingCopy: true });
+
+  if (product.status === PRODUCT_STATUSES.REJECTED) {
+    product.status = PRODUCT_STATUSES.DRAFT;
+    product.rejectionReason = null;
+  }
 
   if (payload.name !== undefined) product.name = payload.name;
   if (payload.description !== undefined) product.description = payload.description;
@@ -221,13 +235,38 @@ async function updateProduct(productId, payload, vendorId) {
   }
 
   await product.save();
+
+  let pendingRevision = null;
+  if (wasApproved) {
+    pendingRevision = await upsertPendingRevision(product, {
+      name: product.name,
+      slug: product.slug,
+      description: product.description,
+      brand: product.brand,
+      currency: product.currency,
+      basePrice: product.basePrice,
+      attributeValues: product.attributeValues,
+    });
+  }
+
   await writeAuditLog({
     actorId: vendorId,
     targetUserId: vendorId,
     action: AUDIT_ACTIONS.PRODUCT_UPDATED,
-    meta: { entityType: 'Product', entityId: String(product._id) },
+    meta: {
+      entityType: 'Product',
+      entityId: String(product._id),
+      revisionId: pendingRevision ? String(pendingRevision._id) : undefined,
+    },
   });
-  return loadProductBundle(product);
+  const bundle = await loadProductBundle(product);
+  if (pendingRevision) {
+    bundle.pendingRevision = {
+      id: String(pendingRevision._id),
+      status: pendingRevision.status,
+    };
+  }
+  return bundle;
 }
 
 async function listProducts(vendorId, query) {
@@ -269,11 +308,14 @@ async function getProduct(productId, vendorId) {
 
 async function submitProduct(productId, vendorId) {
   const product = await getOwnedProduct(productId, vendorId);
-  if (product.status !== PRODUCT_STATUSES.DRAFT) {
+  if (
+    product.status !== PRODUCT_STATUSES.DRAFT &&
+    product.status !== PRODUCT_STATUSES.REJECTED
+  ) {
     throw new ApiError(
       409,
       'INVALID_TRANSITION',
-      'Only DRAFT products can be submitted'
+      'Only DRAFT or REJECTED products can be submitted'
     );
   }
 
@@ -330,6 +372,7 @@ async function submitProduct(productId, vendorId) {
 
   product.status = PRODUCT_STATUSES.PENDING_REVIEW;
   product.submittedAt = new Date();
+  product.rejectionReason = null;
   await product.save();
 
   await writeAuditLog({
@@ -482,7 +525,7 @@ async function setVariants(productId, variantsInput, vendorId) {
 
 async function adjustStock(productId, variantId, delta, vendorId) {
   const product = await getOwnedProduct(productId, vendorId);
-  assertEditable(product);
+  assertStockAdjustable(product);
 
   if (!mongoose.isValidObjectId(variantId)) {
     throw new ApiError(400, 'INVALID_ID', 'Invalid variant id');
@@ -529,6 +572,28 @@ async function adjustStock(productId, variantId, delta, vendorId) {
   }
 
   const fresh = updated;
+
+  // Keep public catalog stock in sync for approved products.
+  if (
+    product.status === PRODUCT_STATUSES.APPROVED &&
+    product.publishedSnapshot?.variants
+  ) {
+    const snapVariants = product.publishedSnapshot.variants.map((v) => {
+      if (String(v.id) !== String(variantId)) return v;
+      return {
+        ...v,
+        stockQuantity: fresh.stockQuantity,
+        availability: fresh.availability,
+      };
+    });
+    product.publishedSnapshot = {
+      ...product.publishedSnapshot,
+      variants: snapVariants,
+    };
+    product.markModified('publishedSnapshot');
+    await product.save();
+  }
+
   await writeAuditLog({
     actorId: vendorId,
     targetUserId: vendorId,
@@ -550,7 +615,11 @@ async function addProductImage(productId, file, vendorId) {
 
   const count = await ProductMedia.countDocuments({ productId: product._id });
   if (count >= MAX_PRODUCT_IMAGES) {
-    if (file?.path) fs.unlink(file.path, () => undefined);
+    if (file?.filename) {
+      await removeStoredFile(STORAGE_FOLDERS.PRODUCT_IMAGES, file.filename).catch(
+        () => undefined
+      );
+    }
     throw new ApiError(
       400,
       'TOO_MANY_IMAGES',
@@ -595,11 +664,9 @@ async function deleteProductImage(productId, mediaId, vendorId) {
   if (!media) {
     throw new ApiError(404, 'MEDIA_NOT_FOUND', 'Image not found');
   }
-  try {
-    fs.unlinkSync(resolveProductImagePath(media.storedName));
-  } catch {
-    // ignore missing file
-  }
+  await removeStoredFile(STORAGE_FOLDERS.PRODUCT_IMAGES, media.storedName).catch(
+    () => undefined
+  );
   const wasPrimary = media.isPrimary;
   await media.deleteOne();
   if (wasPrimary) {
@@ -665,7 +732,5 @@ module.exports = {
   addProductImage,
   deleteProductImage,
   reorderProductImages,
-  productUploadsDir,
-  resolveProductImagePath,
   MAX_PRODUCT_IMAGES,
 };

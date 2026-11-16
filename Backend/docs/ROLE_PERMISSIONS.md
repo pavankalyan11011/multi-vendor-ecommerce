@@ -8,7 +8,14 @@
 | `vendor` | Shop owner (approved) | Manage own products, view/fulfill own order items |
 | `customer` | Buyer | Browse, cart, checkout, view own orders |
 
-Phase 1 uses a **single role per user** (`User.role`). Multi-role and vendor staff come later.
+Users live in one global `users` collection. Each account has:
+
+- `roles: string[]` — all portal capabilities (`CUSTOMER`, `VENDOR`, `ADMIN`)
+- `role` — primary (highest-privilege) role for JWT / legacy callers
+
+Portals authorize with **membership in `roles`**, not equality on `role` alone.
+Example: an operator can be `["ADMIN","CUSTOMER"]` and use Console + Shop with one email.
+Vendor staff (multiple logins per shop) is still future work.
 
 ## 2. Vendor gate
 

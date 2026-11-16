@@ -1,9 +1,8 @@
 "use client";
 
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
 import { Alert } from "@/components/ui/alert";
 import {
   flattenCategoryTree,
@@ -137,10 +136,7 @@ function AttributeSetsWorkbench() {
 
 export default function AttributeSetsPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Attribute sets" wide>
-        <AttributeSetsWorkbench />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell><AttributeSetsWorkbench />
+    </AdminShell>
   );
 }

@@ -1,11 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
-const crypto = require('crypto');
 const { ApiError } = require('../utils/ApiError');
-const { uploadsDir } = require('../services/vendorApplication.service');
-const { categoryUploadsDir } = require('../services/category.service');
-const { productUploadsDir } = require('../services/product.service');
+const { STORAGE_FOLDERS } = require('../constants/storageFolders');
+const { persistUpload } = require('../storage');
 
 const ALLOWED_MIME = new Set([
   'application/pdf',
@@ -23,45 +19,7 @@ const CATEGORY_IMAGE_MIME = new Set([
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 const CATEGORY_IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2MB
 
-function ensureUploadDir() {
-  const dir = uploadsDir();
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
-}
-
-function ensureCategoryUploadDir() {
-  const dir = categoryUploadsDir();
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
-}
-
-function ensureProductUploadDir() {
-  const dir = productUploadsDir();
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
-}
-
-const storage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, ensureUploadDir());
-  },
-  filename(_req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 10);
-    const name = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-    cb(null, name);
-  },
-});
-
-const categoryImageStorage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, ensureCategoryUploadDir());
-  },
-  filename(_req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 10);
-    const name = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-    cb(null, name);
-  },
-});
+const memory = multer.memoryStorage();
 
 function fileFilter(_req, file, cb) {
   if (!ALLOWED_MIME.has(file.mimetype)) {
@@ -90,7 +48,8 @@ function categoryImageFilter(_req, file, cb) {
 }
 
 function detectImageMime(buffer) {
-  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+  if (!buffer || buffer.length < 3) return null;
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return 'image/jpeg';
   }
   if (
@@ -112,118 +71,88 @@ function detectImageMime(buffer) {
   return null;
 }
 
-function assertCategoryImageSignature(filePath) {
-  const fd = fs.openSync(filePath, 'r');
-  try {
-    const buf = Buffer.alloc(16);
-    fs.readSync(fd, buf, 0, 16, 0);
-    const detected = detectImageMime(buf);
-    if (!detected) {
-      throw new ApiError(
-        400,
-        'INVALID_FILE_SIGNATURE',
-        'File content is not a valid JPEG, PNG, or WEBP image'
-      );
-    }
-    return detected;
-  } finally {
-    fs.closeSync(fd);
+function assertImageSignature(buffer) {
+  const detected = detectImageMime(buffer);
+  if (!detected) {
+    throw new ApiError(
+      400,
+      'INVALID_FILE_SIGNATURE',
+      'File content is not a valid JPEG, PNG, or WEBP image'
+    );
   }
+  return detected;
+}
+
+function wrapMulter(upload, { requireFile = false, persistFolder, validateImage } = {}) {
+  return (req, res, next) => {
+    upload(req, res, async (err) => {
+      if (err) {
+        if (err instanceof ApiError) return next(err);
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          const msg =
+            persistFolder === STORAGE_FOLDERS.VENDOR_DOCS
+              ? 'Document must be 5MB or smaller'
+              : 'Image must be 2MB or smaller';
+          return next(new ApiError(400, 'FILE_TOO_LARGE', msg));
+        }
+        return next(
+          new ApiError(400, 'UPLOAD_FAILED', err.message || 'Upload failed')
+        );
+      }
+
+      if (!req.file) {
+        if (requireFile) {
+          return next(new ApiError(400, 'VALIDATION_ERROR', 'File is required'));
+        }
+        return next();
+      }
+
+      try {
+        if (validateImage) {
+          req.file.mimetype = assertImageSignature(req.file.buffer);
+        }
+        if (persistFolder) {
+          await persistUpload(persistFolder, req.file);
+        }
+        return next();
+      } catch (e) {
+        return next(e);
+      }
+    });
+  };
 }
 
 const vendorDocumentUpload = multer({
-  storage,
+  storage: memory,
   fileFilter,
   limits: { fileSize: MAX_BYTES, files: 1 },
 }).single('document');
 
 const categoryImageUpload = multer({
-  storage: categoryImageStorage,
+  storage: memory,
   fileFilter: categoryImageFilter,
   limits: { fileSize: CATEGORY_IMAGE_MAX_BYTES, files: 1 },
 }).single('image');
-
-const productImageStorage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    cb(null, ensureProductUploadDir());
-  },
-  filename(_req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 10);
-    const name = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-    cb(null, name);
-  },
-});
 
 const productImageUpload = multer({
-  storage: productImageStorage,
+  storage: memory,
   fileFilter: categoryImageFilter,
   limits: { fileSize: CATEGORY_IMAGE_MAX_BYTES, files: 1 },
 }).single('image');
 
-function handleVendorDocumentUpload(req, res, next) {
-  vendorDocumentUpload(req, res, (err) => {
-    if (!err) return next();
-    if (err instanceof ApiError) return next(err);
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return next(
-        new ApiError(400, 'FILE_TOO_LARGE', 'Document must be 5MB or smaller')
-      );
-    }
-    return next(
-      new ApiError(400, 'UPLOAD_FAILED', err.message || 'Upload failed')
-    );
-  });
-}
+const handleVendorDocumentUpload = wrapMulter(vendorDocumentUpload, {
+  persistFolder: STORAGE_FOLDERS.VENDOR_DOCS,
+});
 
-function handleCategoryImageUpload(req, res, next) {
-  categoryImageUpload(req, res, (err) => {
-    if (err) {
-      if (err instanceof ApiError) return next(err);
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return next(
-          new ApiError(400, 'FILE_TOO_LARGE', 'Image must be 2MB or smaller')
-        );
-      }
-      return next(
-        new ApiError(400, 'UPLOAD_FAILED', err.message || 'Upload failed')
-      );
-    }
-    if (!req.file) return next();
-    try {
-      const detected = assertCategoryImageSignature(req.file.path);
-      req.file.mimetype = detected;
-      return next();
-    } catch (signatureErr) {
-      fs.unlink(req.file.path, () => undefined);
-      return next(signatureErr);
-    }
-  });
-}
+const handleCategoryImageUpload = wrapMulter(categoryImageUpload, {
+  persistFolder: STORAGE_FOLDERS.CATEGORY_IMAGES,
+  validateImage: true,
+});
 
-function handleProductImageUpload(req, res, next) {
-  productImageUpload(req, res, (err) => {
-    if (err) {
-      if (err instanceof ApiError) return next(err);
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return next(
-          new ApiError(400, 'FILE_TOO_LARGE', 'Image must be 2MB or smaller')
-        );
-      }
-      return next(
-        new ApiError(400, 'UPLOAD_FAILED', err.message || 'Upload failed')
-      );
-    }
-    if (!req.file) return next();
-    try {
-      const detected = assertCategoryImageSignature(req.file.path);
-      req.file.mimetype = detected;
-      return next();
-    } catch (signatureErr) {
-      fs.unlink(req.file.path, () => undefined);
-      return next(signatureErr);
-    }
-  });
-}
+const handleProductImageUpload = wrapMulter(productImageUpload, {
+  persistFolder: STORAGE_FOLDERS.PRODUCT_IMAGES,
+  validateImage: true,
+});
 
 module.exports = {
   handleVendorDocumentUpload,

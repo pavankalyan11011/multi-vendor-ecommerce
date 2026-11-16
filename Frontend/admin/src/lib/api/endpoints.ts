@@ -32,6 +32,13 @@ export const API_ENDPOINTS = {
     attributes: "/admin/attributes",
     attribute: (id: string) => `/admin/attributes/${id}`,
     attributeStatus: (id: string) => `/admin/attributes/${id}/status`,
+    products: "/admin/products",
+    product: (id: string) => `/admin/products/${id}`,
+    approveProduct: (id: string) => `/admin/products/${id}/approve`,
+    rejectProduct: (id: string) => `/admin/products/${id}/reject`,
+    productRevisions: "/admin/product-revisions",
+    approveRevision: (id: string) => `/admin/product-revisions/${id}/approve`,
+    rejectRevision: (id: string) => `/admin/product-revisions/${id}/reject`,
   },
 } as const;
 

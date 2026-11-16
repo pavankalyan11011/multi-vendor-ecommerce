@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,10 +205,8 @@ function ReviewDetail() {
 
 export default function VendorReviewPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Application review" wide>
-        <ReviewDetail />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell title="Application review">
+      <ReviewDetail />
+    </AdminShell>
   );
 }

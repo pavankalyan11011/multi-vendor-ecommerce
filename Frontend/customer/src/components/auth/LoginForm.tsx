@@ -18,6 +18,7 @@ import {
   type LoginFormValues,
 } from "@/features/auth/schemas/auth.schemas";
 import { getSafeReturnPath } from "@/lib/auth/redirects";
+import { userHasRole } from "@/features/auth/lib/roles";
 
 export function LoginForm() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export function LoginForm() {
     setFormError("");
     try {
       const user = await login(values);
-      if (user.role !== "CUSTOMER") {
+      if (!userHasRole(user, "CUSTOMER")) {
         setFormError(
           "This portal is for customers only. Please use the appropriate application for your account."
         );
@@ -58,11 +59,11 @@ export function LoginForm() {
   return (
     <AuthCard
       title="Welcome back"
-      description="Sign in to manage your orders, addresses, and account."
+      description="Sign in to your Emporia customer account."
       footer={
         <>
           New here?{" "}
-          <Link className="font-medium text-emporia-ink underline-offset-4 hover:underline" href="/register">
+          <Link className="font-medium text-emporia-teal underline-offset-4 hover:underline" href="/register">
             Create a customer account
           </Link>
         </>
@@ -96,10 +97,11 @@ export function LoginForm() {
         <div className="flex items-center justify-between text-sm">
           <Link
             href="/forgot-password"
-            className="font-medium text-emporia-ink-soft underline-offset-4 hover:underline"
+            className="font-medium text-emporia-muted underline-offset-4 hover:text-emporia-ink hover:underline"
           >
             Forgot password?
           </Link>
+          <span className="text-xs text-emporia-muted/80">Not available yet</span>
         </div>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

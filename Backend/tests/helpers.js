@@ -2,6 +2,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 const request = require('supertest');
 const { resetEnvCache } = require('../src/config/env');
+const { resetStorageCache } = require('../src/storage');
 const { User } = require('../src/models/User');
 const { hashPassword } = require('../src/utils/password');
 const { ROLES } = require('../src/constants/roles');
@@ -14,7 +15,10 @@ let app;
 async function startTestApp() {
   mongo = await MongoMemoryServer.create();
   process.env.MONGODB_URI = mongo.getUri();
+  // Keep tests on local disk so they don't need LocalStack/AWS
+  process.env.STORAGE_DRIVER = 'local';
   resetEnvCache();
+  resetStorageCache();
 
   // Jest + mongodb>=7.6 handshake workaround (missing client metadata `driver`)
   await mongoose.connect(process.env.MONGODB_URI, {
@@ -32,6 +36,7 @@ async function stopTestApp() {
     await mongo.stop();
   }
   resetEnvCache();
+  resetStorageCache();
 }
 
 async function clearDb() {

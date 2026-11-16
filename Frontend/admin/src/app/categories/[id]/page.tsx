@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { AdminGuard } from "@/components/admin-auth/AdminGuard";
-import { PortalChrome } from "@/components/brand/PortalChrome";
+import { AdminShell } from "@/components/admin-shell/AdminShell";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -453,10 +452,8 @@ function CategoryEditor() {
 
 export default function CategoryDetailPage() {
   return (
-    <AdminGuard>
-      <PortalChrome title="Edit category" wide>
-        <CategoryEditor />
-      </PortalChrome>
-    </AdminGuard>
+    <AdminShell title="Edit category">
+      <CategoryEditor />
+    </AdminShell>
   );
 }

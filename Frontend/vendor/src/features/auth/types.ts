@@ -5,7 +5,10 @@ export interface AuthUser {
   id: string;
   fullName: string;
   email: string;
+  /** Primary (highest-privilege) role — legacy + display. */
   role: UserRole;
+  /** All roles on this global account (Shop / Seller / Console). */
+  roles?: UserRole[];
   status: UserStatus;
   emailVerified: boolean;
   lastLoginAt: string | null;
