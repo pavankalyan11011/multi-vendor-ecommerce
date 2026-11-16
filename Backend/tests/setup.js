@@ -15,3 +15,7 @@ process.env.BCRYPT_ROUNDS = '4';
 process.env.MONGODB_URI =
   process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/test-placeholder';
 process.env.STORAGE_DRIVER = 'local';
+// Keep checkout stub pay path in tests (no live Razorpay calls).
+delete process.env.RAZORPAY_KEY_ID;
+delete process.env.RAZORPAY_KEY_SECRET;
+process.env.RAZORPAY_ALLOW_STUB = 'true';

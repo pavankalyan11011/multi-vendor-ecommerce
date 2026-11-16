@@ -36,29 +36,27 @@ export function ShopHome() {
             {BRAND.support}
           </p>
           <div className="animate-fade-up-delay-2 mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/browse"
+              className="inline-flex h-12 items-center gap-2 rounded-md bg-emporia-lime px-7 text-sm font-semibold text-emporia-ink transition hover:brightness-95"
+            >
+              Browse products
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
             {signedIn ? (
               <Link
-                href="/account"
-                className="inline-flex h-12 items-center gap-2 rounded-md bg-emporia-lime px-7 text-sm font-semibold text-emporia-ink transition hover:brightness-95"
+                href="/cart"
+                className="inline-flex h-12 items-center rounded-md border border-white/25 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/50 hover:bg-white/10"
               >
-                Go to my account
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                View cart
               </Link>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="inline-flex h-12 items-center rounded-md bg-emporia-lime px-7 text-sm font-semibold text-emporia-ink transition hover:brightness-95"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/register"
-                  className="inline-flex h-12 items-center rounded-md border border-white/25 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/50 hover:bg-white/10"
-                >
-                  Create account
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="inline-flex h-12 items-center rounded-md border border-white/25 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/50 hover:bg-white/10"
+              >
+                Sign in
+              </Link>
             )}
           </div>
         </section>
@@ -70,12 +68,11 @@ export function ShopHome() {
             Marketplace
           </p>
           <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-emporia-ink sm:text-3xl">
-            Product browsing is almost here
+            Shop approved seller listings
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-emporia-muted sm:text-base">
-            Categories and products will appear on this page once the public
-            catalog API (Phase 3C) is live. We are not showing sample products or
-            prices until real listings are available.
+            Browse the public catalog, add items to your cart, and checkout in
+            one multi-vendor order.
           </p>
         </div>
 
@@ -84,17 +81,17 @@ export function ShopHome() {
             {
               icon: Store,
               title: "Independent sellers",
-              body: "Shop from approved vendors once the public catalog opens.",
+              body: "Shop from approved vendors with published product snapshots.",
             },
             {
               icon: ShieldCheck,
               title: "One customer account",
-              body: "Your Emporia login already protects profile and session.",
+              body: "Your Emporia login protects profile, cart, and orders.",
             },
             {
               icon: Truck,
-              title: "Orders later",
-              body: "Cart, checkout, and order tracking land in later phases.",
+              title: "Cart & checkout",
+              body: "Multi-vendor carts create one order with stock checks.",
             },
           ].map((item) => {
             const Icon = item.icon;

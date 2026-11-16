@@ -127,6 +127,13 @@ function loadEnv() {
     refreshTokenTtlMs: Number(process.env.JWT_REFRESH_TTL_MS || 7 * 24 * 60 * 60 * 1000),
     cookieName: process.env.REFRESH_COOKIE_NAME || 'refreshToken',
     bcryptRounds: Number(process.env.BCRYPT_ROUNDS || 12),
+    razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+    razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+    /** Allow POST /orders/:id/pay stub when Razorpay keys are absent (tests/dev). */
+    razorpayAllowStub:
+      String(process.env.RAZORPAY_ALLOW_STUB || '').toLowerCase() === 'true' ||
+      nodeEnv === 'test',
     ...loadStorageConfig(),
   };
 }

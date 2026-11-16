@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, UserRound, X } from "lucide-react";
+import { Menu, ShoppingBag, UserRound, X } from "lucide-react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { cn } from "@/lib/utils";
@@ -47,21 +47,34 @@ export function CustomerHeader({
           >
             Home
           </Link>
-          <span
+          <Link
+            href="/browse"
             className={cn(
-              "rounded-md px-3 py-2 text-sm",
-              onInk ? "text-white/40" : "text-emporia-muted/70"
+              "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              onInk
+                ? "text-white/80 hover:bg-white/10 hover:text-white"
+                : "text-emporia-ink-soft hover:bg-emporia-mist hover:text-emporia-ink"
             )}
-            title="Public catalog arrives with Phase 3C"
           >
             Browse
-            <span className="ml-1.5 text-[0.65rem] font-semibold uppercase tracking-wider">
-              Soon
-            </span>
-          </span>
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
+          {user && !loading ? (
+            <Link
+              href="/cart"
+              className={cn(
+                "hidden items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors sm:inline-flex",
+                onInk
+                  ? "text-white hover:bg-white/10"
+                  : "text-emporia-ink hover:bg-emporia-mist"
+              )}
+            >
+              <ShoppingBag className="h-4 w-4" aria-hidden />
+              Cart
+            </Link>
+          ) : null}
           {!loading ? (
             <Link
               href={accountHref}
@@ -130,14 +143,28 @@ export function CustomerHeader({
             >
               Home
             </Link>
-            <span
+            <Link
+              href="/browse"
               className={cn(
-                "rounded-md px-3 py-2.5 text-sm",
-                onInk ? "text-white/45" : "text-emporia-muted"
+                "rounded-md px-3 py-2.5 text-sm font-medium",
+                onInk ? "text-white" : "text-emporia-ink"
               )}
+              onClick={() => setOpen(false)}
             >
-              Browse · Coming soon
-            </span>
+              Browse
+            </Link>
+            {user ? (
+              <Link
+                href="/cart"
+                className={cn(
+                  "rounded-md px-3 py-2.5 text-sm font-medium",
+                  onInk ? "text-white" : "text-emporia-ink"
+                )}
+                onClick={() => setOpen(false)}
+              >
+                Cart
+              </Link>
+            ) : null}
             <Link
               href={accountHref}
               className={cn(
